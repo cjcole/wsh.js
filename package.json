@@ -1,0 +1,27 @@
+{
+  "name": "josh.js",
+  "version": "0.2.10",
+  "homepage": "http://sdether.github.io/josh.js/",
+  "description": "Javascript Online SHell provides a toolkit for building bash-like command line consoles for web pages.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sdether/josh.js.git"
+  },
+  "keywords": [
+    "shell",
+    "josh"
+  ],
+  "author": "Arne Claassen <arne@claassen.net>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/sdether/josh.js/issues"
+  },
+  "dependencies": {
+    "jquery": "~3.1.0",
+    "lodash": "~4.14.2"
+  }
+}
