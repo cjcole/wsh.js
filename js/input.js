@@ -14,8 +14,19 @@
  * limitations under the License.
  *-------------------------------------------------------------------------*/
 
-var Josh = Josh || {};
-(function (root, $, _) {
+ (function (root, factory) {
+  root.Josh = root.Josh || {};
+
+  if (typeof define === "function" && define.amd) {
+     define(["jquery", "lodash"], function ($, _) {
+       return (root.Josh.Input = factory(root, root.Josh, $, _));
+     });
+   } else if (typeof module === "object" && module.exports) {
+     module.exports = (root.Josh.Input = factory(root, root.Josh, require("jquery"), require("lodash")));
+   } else {
+     root.Josh.Input = factory(root, root.Josh, root.$, root._);
+   }
+ }(this, function (root, Josh, $, _) {
   $.fn.josh_caretTo = function (index) {
     return this.queue(function (next) {
       if (this.createTextRange) {
@@ -43,7 +54,7 @@ var Josh = Josh || {};
   var history = Josh.History();
   var killring = new Josh.KillRing();
 
-  Josh.Input = function (config) {
+  return function (config) {
     config = config || {};
 
     // instance fields
@@ -169,4 +180,4 @@ var Josh = Josh || {};
     });
     return self;
   }
-})(this, $, _);
+}));

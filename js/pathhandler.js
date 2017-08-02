@@ -14,9 +14,20 @@
  * limitations under the License.
  *-------------------------------------------------------------------------*/
 
-var Josh = Josh || {};
-(function(root, $, _) {
-  Josh.PathHandler = function(shell, config) {
+ (function (root, factory) {
+  root.Josh = root.Josh || {};
+
+  if (typeof define === "function" && define.amd) {
+     define(["jquery", "lodash"], function ($, _) {
+       return (root.Josh.PathHandler = factory(root, root.Josh, $, _));
+     });
+   } else if (typeof module === "object" && module.exports) {
+     module.exports = (root.Josh.PathHandler = factory(root, root.Josh, require("jquery"), require("lodash")));
+   } else {
+     root.Josh.PathHandler = factory(root, root.Josh, root.$, root._);
+   }
+ }(this, function (root, Josh, $, _) {
+  return function(shell, config) {
     config = config || {};
     var _console = config.console || (Josh.Debug && root.console ? root.console : {
       log: function() {
@@ -162,4 +173,4 @@ var Josh = Josh || {};
 
     return self;
   };
-})(this, $, _);
+}));

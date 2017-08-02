@@ -14,9 +14,20 @@
  * limitations under the License.
  *-------------------------------------------------------------------------*/
 
-var Josh = Josh || {};
-(function (root) {
-  Josh.History = function (config) {
+ (function (root, factory) {
+  root.Josh = root.Josh || {};
+
+  if (typeof define === "function" && define.amd) {
+     define([], function () {
+       return (root.Josh.History = factory(root, root.Josh));
+     });
+   } else if (typeof module === "object" && module.exports) {
+     module.exports = (root.Josh.History = factory(root, root.Josh));
+   } else {
+     root.Josh.History = factory(root, root.Josh);
+   }
+ }(this, function (root, Josh) {
+  return function (config) {
     config = config || {};
 
     var _console = Josh.Debug && root.console ? root.console : {log: function() {}};
@@ -149,5 +160,4 @@ var Josh = Josh || {};
       }
     };
   };
-})(this);
-
+}));

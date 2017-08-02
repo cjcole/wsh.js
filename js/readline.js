@@ -14,10 +14,11 @@
  * limitations under the License.
  *-------------------------------------------------------------------------*/
 
-var Josh = Josh || {};
-Josh.Version = "0.2.10";
-(function(root) {
-  Josh.Keys = {
+ (function (root, factory) {
+  root.Josh = root.Josh || {};
+
+  root.Josh.Version = "0.2.10";
+  root.Josh.Keys = {
     Special: {
       Backspace: 8,
       Tab: 9,
@@ -39,7 +40,17 @@ Josh.Version = "0.2.10";
     }
   };
 
-  Josh.ReadLine = function(config) {
+  if (typeof define === "function" && define.amd) {
+     define([], function () {
+       return (root.Josh.ReadLine = factory(root, root.Josh));
+     });
+   } else if (typeof module === "object" && module.exports) {
+     module.exports = (root.Josh.ReadLine = factory(root, root.Josh));
+   } else {
+     root.Josh.ReadLine = factory(root, root.Josh);
+   }
+ }(this, function (root, Josh) {
+  return function (config) {
     config = config || {};
 
     // instance fields
@@ -726,4 +737,4 @@ Josh.Version = "0.2.10";
     }
     return self;
   };
-})(this);
+}));
