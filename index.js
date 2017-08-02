@@ -1,11 +1,9 @@
 
-var Josh = {
-    History: require("./js/history"),
-    Input: require("./js/input"),
-    KillRing: require("./js/killring"),
-    PathHandler: require("./js/pathhandler"),
-    Readline: require("./js/readline"),
-    Shell: require("./js/shell")
+module.exports = {
+    History: require("imports-loader?this=>window!./js/history"),
+    KillRing: require("imports-loader?this=>window!./js/killring"),
+    Input: require("imports-loader?this=>window!./js/input"),
+    PathHandler: require("imports-loader?this=>window!./js/pathhandler"),
+    Readline: require("imports-loader?this=>window!./js/readline"),
+    Shell: require("imports-loader?this=>window!./js/shell")
 };
-
-module.exports = Josh;
