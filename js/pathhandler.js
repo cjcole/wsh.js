@@ -36,6 +36,7 @@
     var _shell = shell;
     _shell.templates.not_found = _.template("<div><%=cmd%>: <%=path%>: No such file or directory</div>");
     _shell.templates.ls = _.template("<div><% _.each(nodes, function(node) { %><span><%=node.name%>&nbsp;</span><% }); %></div>");
+    _shell.templates.ls_ex = _.template("<div><% _.each(nodes, function(node) { %><div><%=node.name%>&nbsp;</div><% }); %></div>");
     _shell.templates.pwd = _.template("<div><%=node.path %>&nbsp;</div>");
     _shell.templates.prompt = _.template("<%= node.path %> $");
     var _original_default = _shell.getCommandHandler('_default');
@@ -153,21 +154,38 @@
 
     function ls(cmd, args, callback) {
       _console.log('ls');
-      if(!args || !args[0]) {
-        return render_ls(self.current, self.current.path, callback);
+
+      args = args || []
+
+      var full = args && args[0] === "-l";
+
+      if (full) {
+          args.shift();
+      }
+
+      if(!args[0]) {
+        return render_ls(self.current, self.current.path, full, callback);
       }
       return self.getNode(args[0], function(node) {
-        render_ls(node, args[0], callback);
+        render_ls(node, args[0], full, callback);
       });
     }
 
-    function render_ls(node, path, callback) {
+    function render_ls(node, path, full, callback) {
       if(!node) {
         return callback(_shell.templates.not_found({cmd: 'ls', path: path}));
       }
-      return self.getChildNodes(node, function(children) {
+
+      var getChildNodes = full ? self.getChildNodesEx : self.getChildNodes;
+
+      return getChildNodes(node, function(children) {
         _console.log("finish render: " + node.name);
-        callback(_shell.templates.ls({nodes: children}));
+
+        if (full) {
+            callback(_shell.templates.ls_ex({nodes: children}));
+        } else {
+            callback(_shell.templates.ls({nodes: children}));
+        }
       });
     }
 
