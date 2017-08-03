@@ -132,6 +132,9 @@
         }
         self.refresh();
       },
+      log: function(text) {
+        renderOutput(text, function() {});
+      },
       ask: function(prompt, obscure, callback) {
         _obscure = obscure;
         _resumeCallback();
