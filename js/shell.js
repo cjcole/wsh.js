@@ -91,6 +91,7 @@
     var _initialized;
     var _overrideOnEnter;
     var _resumeCallback;
+    var _obscure;
 
     // public methods
     var self = {
@@ -131,13 +132,15 @@
         }
         self.refresh();
       },
-      ask: function(prompt, callback) {
+      ask: function(prompt, obscure, callback) {
+        _obscure = obscure;
         _resumeCallback();
         self.setPrompt(prompt);
         _history.suspend();
 
         _overrideOnEnter = (line, resumeCallback) => {
           _resumeCallback = resumeCallback;
+          _obscure = false;
 
           callback(line);
           self.setPrompt(_prompt);
@@ -337,6 +340,9 @@
     });
     _readline.onChange(function(line) {
       _line = line;
+      if (_obscure) {
+        _line.text = _line.text.replace(/./g, '*');
+      }
       self.render();
     });
     _readline.onClear(function() {
