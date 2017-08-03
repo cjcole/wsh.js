@@ -132,22 +132,23 @@
         }
         self.refresh();
       },
-      log: function(text) {
-        renderOutput(text, function() {});
-      },
       ask: function(prompt, obscure, callback) {
         _obscure = obscure;
         _resumeCallback();
         self.setPrompt(prompt);
         _history.suspend();
 
-        _overrideOnEnter = (line, resumeCallback) => {
-          _resumeCallback = resumeCallback;
-          _obscure = false;
+        _overrideOnEnter = function(line, resumeCallback) {
+          _resumeCallback = function(output, cmdtext) {
+            if (output) {
+              $(id(_input_id)).before(output);
+            }
+            resumeCallback();
+          };
 
-          callback(line);
-          self.setPrompt(_prompt);
+          _obscure = false;
           _history.resume();
+          callback(line);
         };
       },
       onEOT: function(completionHandler) {
@@ -380,7 +381,7 @@
       _console.log("got command: " + cmdtext);
       if (!cmdtext) {
         return renderOutput(null, function() {
-          callback(cmdtext)
+          callback(cmdtext);
         });
       }
       var parts = split(cmdtext);
