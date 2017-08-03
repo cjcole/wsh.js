@@ -372,9 +372,6 @@
     }
 
     function cmdDone() {
-      if(!_text) {
-        return;
-      }
       var text = _text;
       _history.accept(text);
       _text = '';

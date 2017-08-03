@@ -375,6 +375,11 @@
         });
       }
       _console.log("got command: " + cmdtext);
+      if (!cmdtext) {
+        return renderOutput(null, function() {
+          callback(cmdtext)
+        });
+      }
       var parts = split(cmdtext);
       var cmd = parts[0];
       var args = parts.slice(1);
