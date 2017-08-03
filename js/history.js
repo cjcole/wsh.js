@@ -37,6 +37,7 @@
     var _lastSearchTerm = '';
     var _storage = config.storage || root.localStorage;
     var _key = config.key || 'josh.history';
+    var _suspended = false;
 
     if (_storage) {
       try {
@@ -73,7 +74,18 @@
         _history[_cursor] = text;
         save();
       },
+      suspend:function() {
+          _suspended = true;
+      },
+      resume:function() {
+          _suspended = false;
+      },
       accept:function (text) {
+        if (_suspended) {
+            _console.log("history suspended " + text);
+            return;
+        }
+
         _console.log("accepting history " + text);
         var last = _history.length - 1;
         if (text) {

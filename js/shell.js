@@ -89,6 +89,8 @@
     var _promptHandler;
     var _initializationHandler;
     var _initialized;
+    var _overrideOnEnter;
+    var _resumeCallback;
 
     // public methods
     var self = {
@@ -128,6 +130,19 @@
           return;
         }
         self.refresh();
+      },
+      ask: function(prompt, callback) {
+        _resumeCallback();
+        self.setPrompt(prompt);
+        _history.suspend();
+
+        _overrideOnEnter = (line, resumeCallback) => {
+          _resumeCallback = resumeCallback;
+
+          callback(line);
+          self.setPrompt(_prompt);
+          _history.resume();
+        };
       },
       onEOT: function(completionHandler) {
         _readline.onEOT(completionHandler);
@@ -345,15 +360,26 @@
       self.render();
     });
     _readline.onEnter(function(cmdtext, callback) {
+      if (_overrideOnEnter) {
+        var fn = _overrideOnEnter;
+        _overrideOnEnter = null;
+
+        return renderOutput(null, function() {
+          fn(cmdtext, callback);
+        });
+      }
       _console.log("got command: " + cmdtext);
       var parts = split(cmdtext);
       var cmd = parts[0];
       var args = parts.slice(1);
       var handler = getHandler(cmd);
-      return handler.exec(cmd, args, function(output, cmdtext) {
+      _resumeCallback = function(output, cmdtext) {
         renderOutput(output, function() {
           callback(cmdtext)
         });
+      };
+      return handler.exec(cmd, args, function(output, cmdtext) {
+        _resumeCallback(output, cmdtext);
       });
     });
     _readline.onCompletion(function(line, callback) {
