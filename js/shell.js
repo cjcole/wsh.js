@@ -390,7 +390,9 @@
       try {
         parts = split(cmdtext);
       } catch (error) {
-        return callback(self.templates.bad_split({error: error.code}));
+        return renderOutput(self.templates.bad_split({error: error.code}), function() {
+          callback(cmdtext)
+        });
       }
 
       var cmd = parts[0];
