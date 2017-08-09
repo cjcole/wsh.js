@@ -21,6 +21,7 @@
     "url": "https://github.com/sdether/josh.js/issues"
   },
   "dependencies": {
+    "argv-split": "^2.0.1",
     "jquery": "~3.1.0",
     "lodash": "~4.14.2"
   }

@@ -18,15 +18,15 @@
   root.Josh = root.Josh || {};
 
   if (typeof define === "function" && define.amd) {
-     define(["jquery", "lodash"], function ($, _) {
-       return (root.Josh.Shell = factory(root, root.Josh, $, _));
+     define(["jquery", "lodash", "argv-split"], function ($, _, as) {
+       return (root.Josh.Shell = factory(root, root.Josh, $, _, as));
      });
    } else if (typeof module === "object" && module.exports) {
-     module.exports = (root.Josh.Shell = factory(root, root.Josh, require("jquery"), require("lodash")));
+     module.exports = (root.Josh.Shell = factory(root, root.Josh, require("jquery"), require("lodash"), require("argv-split")));
    } else {
-     root.Josh.Shell = factory(root, root.Josh, root.$, root._);
+     root.Josh.Shell = factory(root, root.Josh, root.$, root._, root.as);
    }
- }(this, function (root, Josh, $, _) {
+ }(this, function (root, Josh, $, _, as) {
   return function(config) {
     config = config || {};
 
@@ -278,7 +278,7 @@
     }
 
     function split(str) {
-      return _.filter(str.split(/\s+/), function(x) {
+      return _.filter(as(str), function(x) {
         return x;
       });
     }
