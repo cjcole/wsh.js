@@ -100,6 +100,7 @@
         history: _.template("<div><% _.each(items, function(cmd, i) { %><div><%- i %>&nbsp;<%- cmd %></div><% }); %></div>"),
         help: _.template("<div><div><strong>Commands:</strong></div><% _.each(commands, function(cmd) { %><div>&nbsp;<%- cmd %></div><% }); %></div>"),
         bad_command: _.template('<div><strong>Unrecognized command:&nbsp;</strong><%=cmd%></div>'),
+        bad_split: _.template('<div><strong>Unable&nbsp;to&nbsp;parse&nbsp;command:&nbsp;</strong><%=error%></div>'),
         input_cmd: _.template('<div id="<%- id %>"><span class="prompt"></span>&nbsp;<span class="input"><span class="left"/><span class="cursor"/><span class="right"/></span></div>'),
         input_search: _.template('<div id="<%- id %>">(reverse-i-search)`<span class="searchterm"></span>\':&nbsp;<span class="input"><span class="left"/><span class="cursor"/><span class="right"/></span></div>'),
         suggest: _.template("<div><% _.each(suggestions, function(suggestion) { %><div><%- suggestion %></div><% }); %></div>")
@@ -384,7 +385,14 @@
           callback(cmdtext);
         });
       }
-      var parts = split(cmdtext);
+      var parts;
+
+      try {
+        parts = split(cmdtext);
+      } catch (error) {
+        return callback(self.templates.bad_split({error: error.code}));
+      }
+
       var cmd = parts[0];
       var args = parts.slice(1);
       var handler = getHandler(cmd);
@@ -402,7 +410,13 @@
         return callback();
       }
       var text = line.text.substr(0, line.cursor);
-      var parts = split(text);
+      var parts;
+
+      try {
+        parts = split(text);
+      } catch (error) {
+        return callback();
+      }
 
       var cmd = parts.shift() || '';
       var arg = parts.pop() || '';
