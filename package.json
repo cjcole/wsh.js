@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "argv-split": "^2.0.1",
-    "jquery": "~3.1.0",
-    "lodash": "~4.14.2"
+    "jquery": "^3.2.0",
+    "lodash": "^4.2.0"
   }
 }
