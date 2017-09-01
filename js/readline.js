@@ -434,22 +434,22 @@
             if(!_history.hasPrev()) {
                 return;
             }
-            getHistory(_history.prev);
+            getHistory(_history.prev.bind(_history));
         }
 
         function cmdHistoryNext() {
             if(!_history.hasNext()) {
                 return;
             }
-            getHistory(_history.next);
+            getHistory(_history.next.bind(_history));
         }
 
         function cmdHistoryTop() {
-            getHistory(_history.top);
+            getHistory(_history.top.bind(_history));
         }
 
         function cmdHistoryEnd() {
-            getHistory(_history.end);
+            getHistory(_history.end.bind(_history));
         }
 
         function cmdDeleteChar() {

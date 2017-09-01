@@ -104,7 +104,7 @@
                 bad_split: ({ error }) => `<div><strong>Unable&nbsp;to&nbsp;parse&nbsp;command:&nbsp;</strong>${error}</div>`,
                 input_cmd: ({ id }) => `<div id="${id}"><span class="prompt"></span>&nbsp;<span class="input"><span class="left"/><span class="cursor"/><span class="right"/></span></div>`,
                 input_search: ({ id }) => `<div id="${id}">(reverse-i-search)\`<span class="searchterm"></span>\':&nbsp;<span class="input"><span class="left"/><span class="cursor"/><span class="right"/></span></div>`,
-                suggest: ({ suggestions }) => `<div>${suggestions.map((suggestion) => `<div>${suggestion}</div>`).join("")}/div>`
+                suggest: ({ suggestions }) => `<div>${suggestions.map((suggestion) => `<div>${suggestion}</div>`).join("")}</div>`
             },
             isActive: function() {
                 return _readline.isActive();
@@ -326,8 +326,8 @@
         }
 
         // init
-        _readline.onActivate(function() {
-            if(!_initialized) {
+        _readline.onActivate(() => {
+            if(_initialized) {
                 _initialized = true;
                 if(_initializationHandler) {
                     return _initializationHandler(activate);
