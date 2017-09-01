@@ -1,5 +1,9 @@
-josh.js 0.2
-===========
+josh.js
+=======
+
+This is a fork of josh.js to implement new features and bring up to es6/es7.
+
+
 
 http://sdether.github.io/josh.js/
 
@@ -114,7 +118,7 @@ In the below `C-x` refers to the `Ctrl-x` keystroke, while `M-x` refers to the `
 <dt><code>C-d</code> on empty line</dt>
 <dd>call <code>onCancel</code> handler</dd>
 </dl>
-  
+
 ### shell.js
 `shell.js` has external dependencies of [jQuery](http://jquery.com/), [Underscore](http://underscorejs.org/) and internal dependencies of `readline.js` and `history.js`.
 

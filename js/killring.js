@@ -6,7 +6,7 @@
  * You may obtain a copy of the License at
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
-
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,102 +14,102 @@
  * limitations under the License.
  *-------------------------------------------------------------------------*/
 
- (function (root, factory) {
-  root.Josh = root.Josh || {};
+(function (root, factory) {
+    root.Josh = root.Josh || {};
 
-  if (typeof define === "function" && define.amd) {
-     define([], function () {
-       return (root.Josh.KillRing = factory(root, root.Josh));
-     });
-   } else if (typeof module === "object" && module.exports) {
-     module.exports = (root.Josh.KillRing = factory(root, root.Josh));
-   } else {
-     root.Josh.KillRing = factory(root, root.Josh);
-   }
- }(this, function (root, Josh) {
-  return function(config) {
-    config = config || {};
-
-    var _console = Josh.Debug && root.console ? root.console : {log: function() {
-    }};
-    var _ring = config.ring || [];
-    var _cursor = config.cursor || 0;
-    var _uncommitted = false;
-    var _yanking = false;
-    if(_ring.length == 0) {
-      _cursor = -1;
-    } else if(_cursor >= _ring.length) {
-      _cursor = _ring.length - 1;
+    if (typeof define === "function" && define.amd) {
+        define([], function () {
+            return (root.Josh.KillRing = factory(root, root.Josh));
+        });
+    } else if (typeof module === "object" && module.exports) {
+        module.exports = (root.Josh.KillRing = factory(root, root.Josh));
+    } else {
+        root.Josh.KillRing = factory(root, root.Josh);
     }
-    var self = {
-      isinkill: function() {
-        return _uncommitted;
-      },
-      lastyanklength: function() {
-        if(!_yanking) {
-          return 0;
-        }
-        return _ring[_cursor].length;
-      },
-      append: function(value) {
-        _yanking = false;
-        if(!value) {
-          return;
-        }
-        if(_ring.length == 0 || !_uncommitted) {
-          _ring.push('');
-        }
-        _cursor = _ring.length - 1;
-        _console.log("appending: " + value);
-        _uncommitted = true;
-        _ring[_cursor] += value;
-      },
-      prepend: function(value) {
-        _yanking = false;
-        if(!value) {
-          return;
-        }
-        if(_ring.length == 0 || !_uncommitted) {
-          _ring.push('');
-        }
-        _cursor = _ring.length - 1;
-        _console.log("prepending: " + value);
-        _uncommitted = true;
-        _ring[_cursor] = value + _ring[_cursor];
-      },
-      commit: function() {
-        _console.log("committing");
-        _yanking = false;
-        _uncommitted = false;
-      },
-      yank: function() {
-        self.commit();
+}(this, function (root, Josh) {
+    return function(config) {
+        config = config || {};
+
+        var _console = Josh.Debug && root.console ? root.console : {log: function() {
+        }};
+        var _ring = config.ring || [];
+        var _cursor = config.cursor || 0;
+        var _uncommitted = false;
+        var _yanking = false;
         if(_ring.length == 0) {
-          return null;
+            _cursor = -1;
+        } else if(_cursor >= _ring.length) {
+            _cursor = _ring.length - 1;
         }
-        _yanking = true;
-        return _ring[_cursor];
-      },
-      rotate: function() {
-        if(!_yanking || _ring.length == 0) {
-          return null;
-        }
-        --_cursor;
-        if(_cursor < 0) {
-          _cursor = _ring.length - 1;
-        }
-        return self.yank();
-      },
-      items: function() {
-        return _ring.slice(0);
-      },
-      clear: function() {
-        _ring = [];
-        _cursor = -1;
-        _yanking = false;
-        _uncommited = false;
-      }
-    };
-    return self;
-  }
+        var self = {
+            isinkill: function() {
+                return _uncommitted;
+            },
+            lastyanklength: function() {
+                if(!_yanking) {
+                    return 0;
+                }
+                return _ring[_cursor].length;
+            },
+            append: function(value) {
+                _yanking = false;
+                if(!value) {
+                    return;
+                }
+                if(_ring.length == 0 || !_uncommitted) {
+                    _ring.push('');
+                }
+                _cursor = _ring.length - 1;
+                _console.log("appending: " + value);
+                _uncommitted = true;
+                _ring[_cursor] += value;
+            },
+            prepend: function(value) {
+                _yanking = false;
+                if(!value) {
+                    return;
+                }
+                if(_ring.length == 0 || !_uncommitted) {
+                    _ring.push('');
+                }
+                _cursor = _ring.length - 1;
+                _console.log("prepending: " + value);
+                _uncommitted = true;
+                _ring[_cursor] = value + _ring[_cursor];
+            },
+            commit: function() {
+                _console.log("committing");
+                _yanking = false;
+                _uncommitted = false;
+            },
+            yank: function() {
+                self.commit();
+                if(_ring.length == 0) {
+                    return null;
+                }
+                _yanking = true;
+                return _ring[_cursor];
+            },
+            rotate: function() {
+                if(!_yanking || _ring.length == 0) {
+                    return null;
+                }
+                --_cursor;
+                if(_cursor < 0) {
+                    _cursor = _ring.length - 1;
+                }
+                return self.yank();
+            },
+            items: function() {
+                return _ring.slice(0);
+            },
+            clear: function() {
+                _ring = [];
+                _cursor = -1;
+                _yanking = false;
+                _uncommited = false;
+            }
+        };
+        return self;
+    }
 }));
