@@ -1,9 +1,9 @@
 
 module.exports = {
-    History: require("./js/history").default,
-    KillRing: require("./js/killring").default,
-    PathHandler: require("./js/pathhandler").default,
-    Readline: require("./js/readline").default,
-    Shell: require("./js/shell").default,
-    templates: require("./js/templates").default
+    History: require("./lib/history").default,
+    KillRing: require("./lib/killring").default,
+    PathHandler: require("./lib/pathhandler").default,
+    Readline: require("./lib/readline").default,
+    Shell: require("./lib/shell").default,
+    templates: require("./lib/templates").default
 };
