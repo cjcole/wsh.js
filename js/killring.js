@@ -14,102 +14,112 @@
  * limitations under the License.
  *-------------------------------------------------------------------------*/
 
-(function (root, factory) {
-    root.Josh = root.Josh || {};
+class KillRing {
+    constructor(config = {}) {
+        this.debug = !!config.debug;
+        this.ring = config.ring || [];
+        this.cursor = config.cursor || 0;
+        this.uncommitted = false;
+        this.yanking = false;
 
-    if (typeof define === "function" && define.amd) {
-        define([], function () {
-            return (root.Josh.KillRing = factory(root, root.Josh));
-        });
-    } else if (typeof module === "object" && module.exports) {
-        module.exports = (root.Josh.KillRing = factory(root, root.Josh));
-    } else {
-        root.Josh.KillRing = factory(root, root.Josh);
-    }
-}(this, function (root, Josh) {
-    return function(config) {
-        config = config || {};
-
-        var _console = Josh.Debug && root.console ? root.console : {log: function() {
-        }};
-        var _ring = config.ring || [];
-        var _cursor = config.cursor || 0;
-        var _uncommitted = false;
-        var _yanking = false;
-        if(_ring.length == 0) {
-            _cursor = -1;
-        } else if(_cursor >= _ring.length) {
-            _cursor = _ring.length - 1;
+        if (this.ring.length === 0) {
+            this.cursor = -1;
+        } else if (this.cursor >= this.ring.length) {
+            this.cursor = this.ring.length - 1;
         }
-        var self = {
-            isinkill: function() {
-                return _uncommitted;
-            },
-            lastyanklength: function() {
-                if(!_yanking) {
-                    return 0;
-                }
-                return _ring[_cursor].length;
-            },
-            append: function(value) {
-                _yanking = false;
-                if(!value) {
-                    return;
-                }
-                if(_ring.length == 0 || !_uncommitted) {
-                    _ring.push('');
-                }
-                _cursor = _ring.length - 1;
-                _console.log("appending: " + value);
-                _uncommitted = true;
-                _ring[_cursor] += value;
-            },
-            prepend: function(value) {
-                _yanking = false;
-                if(!value) {
-                    return;
-                }
-                if(_ring.length == 0 || !_uncommitted) {
-                    _ring.push('');
-                }
-                _cursor = _ring.length - 1;
-                _console.log("prepending: " + value);
-                _uncommitted = true;
-                _ring[_cursor] = value + _ring[_cursor];
-            },
-            commit: function() {
-                _console.log("committing");
-                _yanking = false;
-                _uncommitted = false;
-            },
-            yank: function() {
-                self.commit();
-                if(_ring.length == 0) {
-                    return null;
-                }
-                _yanking = true;
-                return _ring[_cursor];
-            },
-            rotate: function() {
-                if(!_yanking || _ring.length == 0) {
-                    return null;
-                }
-                --_cursor;
-                if(_cursor < 0) {
-                    _cursor = _ring.length - 1;
-                }
-                return self.yank();
-            },
-            items: function() {
-                return _ring.slice(0);
-            },
-            clear: function() {
-                _ring = [];
-                _cursor = -1;
-                _yanking = false;
-                _uncommited = false;
-            }
-        };
-        return self;
     }
-}));
+
+    _log(...args) {
+        this.debug && console.log(...args);
+    }
+
+    isinkill() {
+        return this.uncommitted;
+    }
+
+    lastyanklength() {
+        if (!this.yanking) {
+            return 0;
+        }
+
+        return this.ring[this.cursor].length;
+    }
+
+    append(value) {
+        this.yanking = false;
+
+        if (!value) {
+            return;
+        }
+
+        if (this.ring.length === 0 || !this.uncommitted) {
+            this.ring.push("");
+        }
+
+        this.cursor = this.ring.length - 1;
+        this._log(`appending: ${value}`);
+        this.uncommitted = true;
+        this.ring[this.cursor] += value;
+    }
+
+    prepend(value) {
+        this.yanking = false;
+
+        if (!value) {
+            return;
+        }
+
+        if (this.ring.length === 0 || !this.uncommitted) {
+            this.ring.push("");
+        }
+
+        this.cursor = this.ring.length - 1;
+        this._log(`prepending: ${value}`);
+        this.uncommitted = true;
+        this.ring[this.cursor] = value + this.ring[this.cursor];
+    }
+
+    commit() {
+        this._log("committing");
+        this.yanking = false;
+        this.uncommitted = false;
+    }
+
+    yank() {
+        this.commit();
+
+        if (this.ring.length === 0) {
+            return null;
+        }
+
+        this.yanking = true;
+
+        return this.ring[this.cursor];
+    }
+
+    rotate() {
+        if (!this.yanking || this.ring.length === 0) {
+            return null;
+        }
+
+        --this.cursor;
+        if (this.cursor < 0) {
+            this.cursor = this.ring.length - 1;
+        }
+
+        return this.yank();
+    }
+
+    items() {
+        return this.ring.slice(0);
+    }
+
+    clear() {
+        this.ring = [];
+        this.cursor = -1;
+        this.yanking = false;
+        this.uncommited = false;
+    }
+}
+
+export default KillRing;

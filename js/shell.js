@@ -14,437 +14,484 @@
  * limitations under the License.
  *-------------------------------------------------------------------------*/
 
-(function (root, factory) {
-    root.Josh = root.Josh || {};
+import History from "./history";
+import ReadLine from "./readline";
+import templates from "./templates";
+import $ from "jquery";
+import as from "argv-split";
 
-    if (typeof define === "function" && define.amd) {
-        define(["jquery", "argv-split"], function ($, as) {
-            return (root.Josh.Shell = factory(root, root.Josh, $, as));
-        });
-    } else if (typeof module === "object" && module.exports) {
-        module.exports = (root.Josh.Shell = factory(root, root.Josh, require("jquery"), require("argv-split")));
-    } else {
-        root.Josh.Shell = factory(root, root.Josh, root.$, root.as);
-    }
-}(this, function (root, Josh, $, as) {
-    return function(config) {
-        config = config || {};
+const escape = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 
-        // instance fields
-        var _console = config.console || (Josh.Debug && root.console ? root.console : {
-            log: function() {
-            }
-        });
-        const escape = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        var _prompt = config.prompt || 'jsh$';
-        var _shell_view_id = config.shell_view_id || 'shell-view';
-        var _shell_panel_id = config.shell_panel_id || 'shell-panel';
-        var _input_id = config.input_id || 'shell-cli';
-        var _blinktime = config.blinktime || 500;
-        var _history = config.history || new Josh.History();
-        var _readline = config.readline || new Josh.ReadLine({history: _history, console: _console});
-        var _active = false;
-        var _cursor_visible = false;
-        var _activationHandler;
-        var _deactivationHandler;
-        var _cmdHandlers = {
+class Shell {
+    constructor(config = {}) {
+        this.debug = !!config.debug;
+        this.prompt = config.prompt || "jsh$";
+        this.shellViewId = config.shell_view_id || "shell-view";
+        this.shellPanelId = config.shell_panel_id || "shell-panel";
+        this.inputId = config.input_id || "shell-cli";
+        this.blinktime = config.blinktime || 500;
+        this.history = config.history || new History();
+        this.readline = config.readline || new ReadLine({ history: this.history });
+        this.active = false;
+        this.cursorVisible = false;
+        this.activationHandler;
+        this.deactivationHandler;
+        this.cmdHandlers = {
             clear: {
-                exec: function(cmd, args, callback) {
-                    $(id(_input_id)).parent().empty();
+                exec: (cmd, args, callback) => {
+                    $(`#${this.inputId}`).parent().empty();
                     callback();
                 }
             },
             help: {
-                exec: function(cmd, args, callback) {
-                    callback(self.templates.help({commands: commands()}));
+                exec: (cmd, args, callback) => {
+                    callback(templates.help({ commands: this._commands() }));
                 }
             },
             history: {
-                exec: function(cmd, args, callback) {
-                    if(args[0] == "-c") {
-                        _history.clear();
+                exec: (cmd, args, callback) => {
+                    if (args[0] === "-c") {
+                        this.history.clear();
                         callback();
                         return;
                     }
-                    callback(self.templates.history({items: _history.items()}));
+
+                    callback(templates.history({ items: this.history.items() }));
                 }
             },
             _default: {
-                exec: function(cmd, args, callback) {
-                    callback(self.templates.bad_command({cmd: cmd}));
+                exec: (cmd, args, callback) => {
+                    callback(templates.badCommand({ cmd: cmd }));
                 },
-                completion: function(cmd, arg, line, callback) {
-                    if(!arg) {
+                completion: (cmd, arg, line, callback) => {
+                    if (!arg) {
                         arg = cmd;
                     }
-                    return callback(self.bestMatch(arg, self.commands()))
+
+                    return callback(this.bestMatch(arg, this._commands()));
                 }
             }
         };
-        var _line = {
-            text: '',
+        this.line = {
+            text: "",
             cursor: 0
         };
-        var _searchMatch = '';
-        var _view, _panel;
-        var _promptHandler;
-        var _initializationHandler;
-        var _initialized;
-        var _overrideOnEnter;
-        var _resumeCallback;
-        var _obscure;
+        this.searchMatch = "";
+        this.view = null;
+        this.panel = null;
+        this.promptHandler = null;
+        this.initializationHandler = null;
+        this.initialized = null;
+        this.overrideOnEnter = null;
+        this.resumeCallback = null;
+        this.obscure = null;
 
-        // public methods
-        var self = {
-            commands: commands,
-            templates: {
-                history: ({ items }) => `<div>${items.map((cmd, i) => `<div>${i}&nbsp;${cmd}</div>`).join("")}</div>`,
-                help: ({ commands }) => `<div><div><strong>Commands:</strong></div>${commands.map((cmd) => `<div>&nbsp;${cmd}</div>`).join("")}</div>`,
-                bad_command: ({ cmd }) => `<div><strong>Unrecognized command:&nbsp;</strong>${cmd}</div>`,
-                bad_split: ({ error }) => `<div><strong>Unable&nbsp;to&nbsp;parse&nbsp;command:&nbsp;</strong>${error}</div>`,
-                input_cmd: ({ id }) => `<div id="${id}"><span class="prompt"></span>&nbsp;<span class="input"><span class="left"/><span class="cursor"/><span class="right"/></span></div>`,
-                input_search: ({ id }) => `<div id="${id}">(reverse-i-search)\`<span class="searchterm"></span>\':&nbsp;<span class="input"><span class="left"/><span class="cursor"/><span class="right"/></span></div>`,
-                suggest: ({ suggestions }) => `<div>${suggestions.map((suggestion) => `<div>${suggestion}</div>`).join("")}</div>`
-            },
-            isActive: function() {
-                return _readline.isActive();
-            },
-            activate: function() {
-                if($(id(_shell_view_id)).length == 0) {
-                    _active = false;
-                    return;
-                }
-                _readline.activate();
-            },
-            deactivate: function() {
-                _console.log("deactivating");
-                _active = false;
-                _readline.deactivate();
-            },
-            setCommandHandler: function(cmd, cmdHandler) {
-                _cmdHandlers[cmd] = cmdHandler;
-            },
-            getCommandHandler: function(cmd) {
-                return _cmdHandlers[cmd];
-            },
-            setPrompt: function(prompt) {
-                _prompt = prompt;
-                if(!_active) {
-                    return;
-                }
-                self.refresh();
-            },
-            ask: function(prompt, obscure, callback) {
-                _obscure = obscure;
-                _resumeCallback();
-                self.setPrompt(prompt);
-                _history.suspend();
+        this._load();
+    }
 
-                _overrideOnEnter = function(line, resumeCallback) {
-                    _resumeCallback = function(output, cmdtext) {
-                        if (output) {
-                            $(id(_input_id)).before(output);
-                        }
-                        resumeCallback();
-                    };
+    _log(...args) {
+        this.debug && console.log(...args);
+    }
 
-                    _obscure = false;
-                    _history.resume();
-                    callback(line);
-                };
-            },
-            onEOT: function(completionHandler) {
-                _readline.onEOT(completionHandler);
-            },
-            onCancel: function(completionHandler) {
-                _readline.onCancel(completionHandler);
-            },
-            onInitialize: function(completionHandler) {
-                _initializationHandler = completionHandler;
-            },
-            onActivate: function(completionHandler) {
-                _activationHandler = completionHandler;
-            },
-            onDeactivate: function(completionHandler) {
-                _deactivationHandler = completionHandler;
-            },
-            onNewPrompt: function(completionHandler) {
-                _promptHandler = completionHandler;
-            },
-            render: function() {
-                var text = _line.text || '';
-                var cursorIdx = _line.cursor || 0;
-                if(_searchMatch) {
-                    cursorIdx = _searchMatch.cursoridx || 0;
-                    text = _searchMatch.text || '';
-                    $(id(_input_id) + ' .searchterm').text(_searchMatch.term);
-                }
-                var left = escape(text.substr(0, cursorIdx)).replace(/ /g, '&nbsp;');
-                var cursor = text.substr(cursorIdx, 1);
-                var right = escape(text.substr(cursorIdx + 1)).replace(/ /g, '&nbsp;');
-                $(id(_input_id) + ' .prompt').html(_prompt);
-                $(id(_input_id) + ' .input .left').html(left);
-                if(!cursor) {
-                    $(id(_input_id) + ' .input .cursor').html('&nbsp;').css('textDecoration', 'underline');
-                } else {
-                    $(id(_input_id) + ' .input .cursor').text(cursor).css('textDecoration', 'underline');
-                }
-                $(id(_input_id) + ' .input .right').html(right);
-                _cursor_visible = true;
-                self.scrollToBottom();
-                _console.log('rendered "' + text + '" w/ cursor at ' + cursorIdx);
-            },
-            refresh: function() {
-                $(id(_input_id)).replaceWith(self.templates.input_cmd({id:_input_id}));
-                self.render();
-                _console.log('refreshed ' + _input_id);
+    isActive() {
+        return this.readline.isActive();
+    }
 
-            },
-            scrollToBottom: function() {
-                _panel.animate({scrollTop: _view.height()}, 0);
-            },
-            bestMatch: function(partial, possible) {
-                _console.log("bestMatch on partial '" + partial + "'");
-                var result = {
-                    completion: null,
-                    suggestions: []
-                };
-                if(!possible || possible.length == 0) {
-                    return result;
+    activate() {
+        if ($(`#${this.shellViewId}`).length === 0) {
+            this.active = false;
+            return;
+        }
+
+        this.readline.activate();
+    }
+
+    deactivate() {
+        this._log("deactivating");
+        this.active = false;
+        this.readline.deactivate();
+    }
+
+    setCommandHandler(cmd, cmdHandler) {
+        this.cmdHandlers[cmd] = cmdHandler;
+    }
+
+    getCommandHandler(cmd) {
+        return this.cmdHandlers[cmd];
+    }
+
+    setPrompt(prompt) {
+        this.prompt = prompt;
+
+        if (!this.active) {
+            return;
+        }
+
+        this.refresh();
+    }
+
+    ask(prompt, obscure, callback) {
+        this.obscure = obscure;
+        this.resumeCallback();
+        this.setPrompt(prompt);
+        this.history.suspend();
+
+        this.overrideOnEnter = (line, resumeCallback) => {
+            this.resumeCallback = (output /* , cmdtext */) => {
+                if (output) {
+                    $(`#${this.inputId}`).before(output);
                 }
-                var common = '';
-                if(!partial) {
-                    if(possible.length == 1) {
-                        result.completion = possible[0];
-                        result.suggestions = possible;
-                        return result;
-                    }
-                    if(!possible.every(function(x) {
-                        return possible[0][0] == x[0]
-                    })) {
-                        result.suggestions = possible;
-                        return result;
-                    }
-                }
-                for(var i = 0; i < possible.length; i++) {
-                    var option = possible[i];
-                    if(option.slice(0, partial.length) == partial) {
-                        result.suggestions.push(option);
-                        if(!common) {
-                            common = option;
-                            _console.log("initial common:" + common);
-                        } else if(option.slice(0, common.length) != common) {
-                            _console.log("find common stem for '" + common + "' and '" + option + "'");
-                            var j = partial.length;
-                            while(j < common.length && j < option.length) {
-                                if(common[j] != option[j]) {
-                                    common = common.substr(0, j);
-                                    break;
-                                }
-                                j++;
-                            }
-                        }
-                    }
-                }
-                result.completion = common.substr(partial.length);
-                return result;
-            }
+
+                resumeCallback();
+            };
+
+            this.obscure = false;
+            this.history.resume();
+            callback(line);
+        };
+    }
+
+    onEOT(completionHandler) {
+        this.readline.on("eot", completionHandler);
+    }
+
+    onCancel(completionHandler) {
+        this.readline.on("cancel", completionHandler);
+    }
+
+    onInitialize(completionHandler) {
+        this.initializationHandler = completionHandler;
+    }
+
+    onActivate(completionHandler) {
+        this.activationHandler = completionHandler;
+    }
+
+    onDeactivate(completionHandler) {
+        this.deactivationHandler = completionHandler;
+    }
+
+    onNewPrompt(completionHandler) {
+        this.promptHandler = completionHandler;
+    }
+
+    render() {
+        let text = this.line.text || "";
+        let cursorIdx = this.line.cursor || 0;
+
+        if (this.searchMatch) {
+            cursorIdx = this.searchMatch.cursoridx || 0;
+            text = this.searchMatch.text || "";
+            $(`#${this.inputId} .searchterm`).text(this.searchMatch.term);
+        }
+
+        const left = escape(text.substr(0, cursorIdx)).replace(/ /g, "&nbsp;");
+        const cursor = text.substr(cursorIdx, 1);
+        const right = escape(text.substr(cursorIdx + 1)).replace(/ /g, "&nbsp;");
+
+        $(`#${this.inputId} .prompt`).html(this.prompt);
+        $(`#${this.inputId} .input .left`).html(left);
+
+        if (!cursor) {
+            $(`#${this.inputId} .input .cursor`).html("&nbsp;").css("textDecoration", "underline");
+        } else {
+            $(`#${this.inputId} .input .cursor`).text(cursor).css("textDecoration", "underline");
+        }
+
+        $(`#${this.inputId} .input .right`).html(right);
+        this.cursorVisible = true;
+        this.scrollToBottom();
+        this._log(`rendered '${text}' w/ cursor at ${cursorIdx}`);
+    }
+
+    refresh() {
+        $(`#${this.inputId}`).replaceWith(templates.inputCmd({ id: this.inputId }));
+        this.render();
+        this._log(`refreshed ${this.inputId}`);
+    }
+
+    scrollToBottom() {
+        this.panel.animate({ scrollTop: this.view.height() }, 0);
+    }
+
+    bestMatch(partial, possible) {
+        this._log(`bestMatch on partial '${partial}'`);
+
+        const result = {
+            completion: null,
+            suggestions: []
         };
 
-        function id(id) {
-            return "#"+id;
+        if (!possible || possible.length === 0) {
+            return result;
         }
 
-        function commands() {
-            return Object.keys(_cmdHandlers).filter((x) => x[0] !== "_")
+        let common = "";
+
+        if (!partial) {
+            if (possible.length === 1) {
+                result.completion = possible[0];
+                result.suggestions = possible;
+                return result;
+            }
+
+            if (!possible.every((x) => possible[0][0] === x[0])) {
+                result.suggestions = possible;
+                return result;
+            }
         }
 
-        function blinkCursor() {
-            if(!_active) {
+        for (let i = 0; i < possible.length; i++) {
+            const option = possible[i];
+
+            if (option.slice(0, partial.length) === partial) {
+                result.suggestions.push(option);
+
+                if (!common) {
+                    common = option;
+                    this._log(`initial common: ${common}`);
+                } else if (option.slice(0, common.length) !== common) {
+                    this._log(`find common stem for '${common}' and '${option}'`);
+
+                    let j = partial.length;
+                    while (j < common.length && j < option.length) {
+                        if (common[j] !== option[j]) {
+                            common = common.substr(0, j);
+                            break;
+                        }
+
+                        j++;
+                    }
+                }
+            }
+        }
+
+        result.completion = common.substr(partial.length);
+        return result;
+    }
+
+    _commands() {
+        return Object.keys(this.cmdHandlers).filter((x) => x[0] !== "_");
+    }
+
+    _blinkCursor() {
+        if (!this.active) {
+            return;
+        }
+
+        setTimeout(() => {
+            if (!this.active) {
                 return;
             }
-            root.setTimeout(function() {
-                if(!_active) {
-                    return;
+
+            this.cursorVisible = !this.cursorVisible;
+
+            if (this.cursorVisible) {
+                $(`#${this.inputId} .input .cursor`).css("textDecoration", "underline");
+            } else {
+                $(`#${this.inputId} .input .cursor`).css("textDecoration", "");
+            }
+
+            this._blinkCursor();
+        }, this.blinktime);
+    }
+
+    _getHandler(cmd) {
+        return this.cmdHandlers[cmd] || this.cmdHandlers._default;
+    }
+
+    _renderOutput(output, callback) {
+        if (output) {
+            $(`#${this.inputId}`).after(output);
+        }
+
+        $(`#${this.inputId} .input .cursor`).css("textDecoration", "");
+        $(`#${this.inputId}`).removeAttr("id");
+        $(`#${this.shellViewId}`).append(templates.inputCmd({ id: this.inputId }));
+
+        if (this.promptHandler) {
+            return this.promptHandler((prompt) => {
+                this.setPrompt(prompt);
+                return callback();
+            });
+        }
+
+        return callback();
+    }
+
+    _activateShell() {
+        this._log("activating shell");
+
+        if (!this.view) {
+            this.view = $(`#${this.shellViewId}`);
+        }
+
+        if (!this.panel) {
+            this.panel = $(`#${this.shellPanelId}`);
+        }
+
+        if ($(`#${this.inputId}`).length === 0) {
+            this.view.append(templates.inputCmd({ id: this.inputId }));
+        }
+
+        this.refresh();
+        this.active = true;
+        this._blinkCursor();
+
+        if (this.promptHandler) {
+            this.promptHandler((prompt) => {
+                this.setPrompt(prompt);
+            });
+        }
+
+        if (this.activationHandler) {
+            this.activationHandler();
+        }
+    }
+
+    _load() {
+        this.readline.on("activate", () => {
+            if (this.initialized) {
+                this.initialized = true;
+                if (this.initializationHandler) {
+                    return this.initializationHandler(this._activateShell.bind(this));
                 }
-                _cursor_visible = !_cursor_visible;
-                if(_cursor_visible) {
-                    $(id(_input_id) + ' .input .cursor').css('textDecoration', 'underline');
-                } else {
-                    $(id(_input_id) + ' .input .cursor').css('textDecoration', '');
-                }
-                blinkCursor();
-            }, _blinktime);
-        }
+            }
 
-        function split(str) {
-            return as(str);
-        }
-
-        function getHandler(cmd) {
-            return _cmdHandlers[cmd] || _cmdHandlers._default;
-        }
-
-        function renderOutput(output, callback) {
-            if(output) {
-                $(id(_input_id)).after(output);
-            }
-            $(id(_input_id) + ' .input .cursor').css('textDecoration', '');
-            $(id(_input_id)).removeAttr('id');
-            $(id(_shell_view_id)).append(self.templates.input_cmd({id:_input_id}));
-            if(_promptHandler) {
-                return _promptHandler(function(prompt) {
-                    self.setPrompt(prompt);
-                    return callback();
-                });
-            }
-            return callback();
-        }
-
-        function activate() {
-            _console.log("activating shell");
-            if(!_view) {
-                _view = $(id(_shell_view_id));
-            }
-            if(!_panel) {
-                _panel = $(id(_shell_panel_id));
-            }
-            if($(id(_input_id)).length == 0) {
-                _view.append(self.templates.input_cmd({id:_input_id}));
-            }
-            self.refresh();
-            _active = true;
-            blinkCursor();
-            if(_promptHandler) {
-                _promptHandler(function(prompt) {
-                    self.setPrompt(prompt);
-                })
-            }
-            if(_activationHandler) {
-                _activationHandler();
-            }
-        }
-
-        // init
-        _readline.onActivate(() => {
-            if(_initialized) {
-                _initialized = true;
-                if(_initializationHandler) {
-                    return _initializationHandler(activate);
-                }
-            }
-            return activate();
+            return this._activateShell();
         });
-        _readline.onDeactivate(function() {
-            if(_deactivationHandler) {
-                _deactivationHandler();
+
+        this.readline.on("deactivate", () => {
+            if (this.deactivationHandler) {
+                this.deactivationHandler();
             }
         });
-        _readline.onChange(function(line) {
-            _line = line;
-            if (_obscure) {
-                _line.text = _line.text.replace(/./g, '*');
+
+        this.readline.on("change", (line) => {
+            this.line = line;
+
+            if (this.obscure) {
+                this.line.text = this.line.text.replace(/./g, "*");
             }
-            self.render();
+
+            this.render();
         });
-        _readline.onClear(function() {
-            _cmdHandlers.clear.exec(null, null, function() {
-                renderOutput(null, function() {
-                });
+
+        this.readline.on("clear", () => {
+            this.cmdHandlers.clear.exec(null, null, () => {
+                this._renderOutput(null, () => {});
             });
         });
-        _readline.onSearchStart(function() {
-            $(id(_input_id)).replaceWith(self.templates.input_search({id:_input_id}));
-            _console.log('started search');
-        });
-        _readline.onSearchEnd(function() {
-            $(id(_input_id)).replaceWith(self.templates.input_cmd({id:_input_id}));
-            _searchMatch = null;
-            self.render();
-            _console.log("ended search");
-        });
-        _readline.onSearchChange(function(match) {
-            _searchMatch = match;
-            self.render();
-        });
-        _readline.onEnter(function(cmdtext, callback) {
-            if (_overrideOnEnter) {
-                var fn = _overrideOnEnter;
-                _overrideOnEnter = null;
 
-                return renderOutput(null, function() {
+        this.readline.on("searchStart", () => {
+            $(`#${this.inputId}`).replaceWith(templates.inputSearch({ id: this.inputId }));
+            this._log("started search");
+        });
+
+        this.readline.on("searchEnd", () => {
+            $(`#${this.inputId}`).replaceWith(templates.inputCmd({ id: this.inputId }));
+            this.searchMatch = null;
+            this.render();
+            this._log("ended search");
+        });
+
+        this.readline.on("searchChange", (match) => {
+            this.searchMatch = match;
+            this.render();
+        });
+
+        this.readline.on("enter", (cmdtext, callback) => {
+            if (this.overrideOnEnter) {
+                const fn = this.overrideOnEnter;
+                this.overrideOnEnter = null;
+
+                return this._renderOutput(null, () => {
                     fn(cmdtext, callback);
                 });
             }
-            _console.log("got command: " + cmdtext);
+
+            this._log(`got command: ${cmdtext}`);
+
             if (!cmdtext) {
-                return renderOutput(null, function() {
+                return this._renderOutput(null, () => {
                     callback(cmdtext);
                 });
             }
-            var parts;
+
+            let parts = [];
 
             try {
-                parts = split(cmdtext);
+                parts = as(cmdtext);
             } catch (error) {
-                return renderOutput(self.templates.bad_split({error: error.code}), function() {
-                    callback(cmdtext)
+                return this._renderOutput(templates.badSplit({ error: error.code }), () => {
+                    callback(cmdtext);
                 });
             }
 
-            var cmd = parts[0];
-            var args = parts.slice(1);
-            var handler = getHandler(cmd);
-            _resumeCallback = function(output, cmdtext) {
-                renderOutput(output, function() {
-                    callback(cmdtext)
+            const cmd = parts[0];
+            const args = parts.slice(1);
+            const handler = this._getHandler(cmd);
+
+            this.resumeCallback = (output, cmdtext) => {
+                this._renderOutput(output, () => {
+                    callback(cmdtext);
                 });
             };
-            return handler.exec(cmd, args, function(output, cmdtext) {
-                _resumeCallback(output, cmdtext);
+
+            return handler.exec(cmd, args, (output, cmdtext) => {
+                this.resumeCallback(output, cmdtext);
             });
         });
-        _readline.onCompletion(function(line, callback) {
-            if(!line) {
+
+        this.readline.on("completion", (line, callback) => {
+            if (!line) {
                 return callback();
             }
-            var text = line.text.substr(0, line.cursor);
-            var parts;
+
+            const text = line.text.substr(0, line.cursor);
+            let parts;
 
             try {
-                parts = split(text);
+                parts = as(text);
             } catch (error) {
                 return callback();
             }
 
-            var cmd = parts.shift() || '';
-            var arg = parts.pop() || '';
-            _console.log("getting completion handler for " + cmd);
-            var handler = getHandler(cmd);
-            if(handler != _cmdHandlers._default && cmd && cmd == text) {
+            const cmd = parts.shift() || "";
+            const arg = parts.pop() || "";
+            this._log(`getting completion handler for ${cmd}`);
+            const handler = this._getHandler(cmd);
 
-                _console.log("valid cmd, no args: append space");
+            if (handler !== this.cmdHandlers._default && cmd && cmd === text) {
+                this._log("valid cmd, no args: append space");
                 // the text to complete is just a valid command, append a space
-                return callback(' ');
+                return callback(" ");
             }
-            if(!handler.completion) {
+
+            if (!handler.completion) {
                 // handler has no completion function, so we can't complete
                 return callback();
             }
-            _console.log("calling completion handler for " + cmd);
-            return handler.completion(cmd, arg, line, function(match) {
-                _console.log("completion: " + JSON.stringify(match));
-                if(!match) {
+
+            this._log(`calling completion handler for ${cmd}`);
+
+            return handler.completion(cmd, arg, line, (match) => {
+                this._log(`completion: ${JSON.stringify(match)}`);
+
+                if (!match) {
                     return callback();
                 }
-                if(match.suggestions && match.suggestions.length > 1) {
-                    return renderOutput(self.templates.suggest({suggestions: match.suggestions}), function() {
+
+                if (match.suggestions && match.suggestions.length > 1) {
+                    return this._renderOutput(templates.suggest({ suggestions: match.suggestions }), () => {
                         callback(match.completion);
                     });
                 }
+
                 return callback(match.completion);
             });
         });
-        return self;
     }
-}));
+}
+
+export default Shell;

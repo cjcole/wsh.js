@@ -1,8 +1,9 @@
 
 module.exports = {
-    History: require("./js/history"),
-    KillRing: require("imports-loader?this=>window!./js/killring"),
-    PathHandler: require("imports-loader?this=>window!./js/pathhandler"),
-    Readline: require("imports-loader?this=>window!./js/readline"),
-    Shell: require("imports-loader?this=>window!./js/shell")
+    History: require("./js/history").default,
+    KillRing: require("./js/killring").default,
+    PathHandler: require("./js/pathhandler").default,
+    Readline: require("./js/readline").default,
+    Shell: require("./js/shell").default,
+    templates: require("./js/templates").default
 };

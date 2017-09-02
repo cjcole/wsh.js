@@ -14,724 +14,717 @@
  * limitations under the License.
  *-------------------------------------------------------------------------*/
 
-(function (root, factory) {
-    root.Josh = root.Josh || {};
+/* global window */
 
-    root.Josh.Version = "0.2.10";
-    root.Josh.Keys = {
-        Special: {
-            Backspace: 8,
-            Tab: 9,
-            Enter: 13,
-            Pause: 19,
-            CapsLock: 20,
-            Escape: 27,
-            Space: 32,
-            PageUp: 33,
-            PageDown: 34,
-            End: 35,
-            Home: 36,
-            Left: 37,
-            Up: 38,
-            Right: 39,
-            Down: 40,
-            Insert: 45,
-            Delete: 46
+import History from "./history";
+import KillRing from "./killring";
+
+const keys = {
+    Backspace: 8,
+    Tab: 9,
+    Enter: 13,
+    Pause: 19,
+    CapsLock: 20,
+    Escape: 27,
+    Space: 32,
+    PageUp: 33,
+    PageDown: 34,
+    End: 35,
+    Home: 36,
+    Left: 37,
+    Up: 38,
+    Right: 39,
+    Down: 40,
+    Insert: 45,
+    Delete: 46
+};
+
+class ReadLine {
+    constructor(config = {}) {
+        this.debug = !!config.debug;
+        this.history = config.history || new History();
+        this.killring = config.killring || new KillRing();
+        this.cursor = 0;
+        this.boundToElement = !!config.element;
+        this.element = config.element || window;
+        this.active = false;
+        this.eventHandlers = {};
+        this.inSearch = false;
+        this.searchMatch;
+        this.lastSearchText = "";
+        this.text = "";
+        this.cursor = 0;
+        this.lastCmd;
+        this.completionActive;
+        this.cmdQueue = [];
+        this.suspended = false;
+        this.cmdMap = {
+            complete: this._cmdComplete.bind(this),
+            done: this._cmdDone.bind(this),
+            noop: this._cmdNoOp.bind(this),
+            historyTop: this._cmdHistoryTop.bind(this),
+            historyEnd: this._cmdHistoryEnd.bind(this),
+            historyNext: this._cmdHistoryNext.bind(this),
+            historyPrevious: this._cmdHistoryPrev.bind(this),
+            end: this._cmdEnd.bind(this),
+            home: this._cmdHome.bind(this),
+            left: this._cmdLeft.bind(this),
+            right: this._cmdRight.bind(this),
+            cancel: this._cmdCancel.bind(this),
+            "delete": this._cmdDeleteChar.bind(this),
+            backspace: this._cmdBackspace.bind(this),
+            killEof: this._cmdKillToEOF.bind(this),
+            killWordback: this._cmdKillWordBackward.bind(this),
+            killWordForward: this._cmdKillWordForward.bind(this),
+            yank: this._cmdYank.bind(this),
+            clear: this._cmdClear.bind(this),
+            search: this._cmdReverseSearch.bind(this),
+            wordBack: this._cmdBackwardWord.bind(this),
+            wordForward: this._cmdForwardWord.bind(this),
+            yankRotate: this._cmdRotate.bind(this),
+            esc: this._cmdEsc.bind(this)
+        };
+        this.keyMap = {
+            "default": {},
+            "control": {},
+            "meta": {}
+        };
+
+        this.bind(keys.Backspace, "default", "backspace");
+        this.bind(keys.Tab, "default", "complete");
+        this.bind(keys.Enter, "default", "done");
+        this.bind(keys.Escape, "default", "esc");
+        this.bind(keys.PageUp, "default", "historyTop");
+        this.bind(keys.PageDown, "default", "historyEnd");
+        this.bind(keys.End, "default", "end");
+        this.bind(keys.Home, "default", "home");
+        this.bind(keys.Left, "default", "left");
+        this.bind(keys.Up, "default", "up");
+        this.bind(keys.Right, "default", "right");
+        this.bind(keys.Down, "default", "down");
+        this.bind(keys.Delete, "default", "delete");
+        this.bind(keys.CapsLock, "default", "noop");
+        this.bind(keys.Pause, "default", "noop");
+        this.bind(keys.Insert, "default", "noop");
+
+        this.bind("A", "control", "home");
+        this.bind("B", "control", "left");
+        this.bind("C", "control", "cancel");
+        this.bind("D", "control", "delete");
+        this.bind("E", "control", "end");
+        this.bind("F", "control", "right");
+        this.bind("P", "control", "historyPrevious");
+        this.bind("N", "control", "historyNext");
+        this.bind("K", "control", "killEof");
+        this.bind("Y", "control", "yank");
+        this.bind("L", "control", "clear");
+        this.bind("R", "control", "search");
+
+        this.bind(keys.Backspace, "meta", "killWordback");
+        this.bind("B", "meta", "wordBack");
+        this.bind("D", "meta", "killWordForward");
+        this.bind("F", "meta", "wordForward");
+        this.bind("Y", "meta", "yankRotate");
+
+        if (this.boundToElement) {
+            this.attach(this.element);
+        } else {
+            this._subscribeToKeys();
         }
-    };
-
-    if (typeof define === "function" && define.amd) {
-        define([], function () {
-            return (root.Josh.ReadLine = factory(root, root.Josh));
-        });
-    } else if (typeof module === "object" && module.exports) {
-        module.exports = (root.Josh.ReadLine = factory(root, root.Josh));
-    } else {
-        root.Josh.ReadLine = factory(root, root.Josh);
     }
-}(this, function (root, Josh) {
-    return function (config) {
-        config = config || {};
 
-        // instance fields
-        var _console = config.console || (Josh.Debug && root.console ? root.console : {
-            log: function() {
+    _log(...args) {
+        this.debug && console.log(...args);
+    }
+
+    _trigger(event, ...args) {
+        this.eventHandlers[event] && this.eventHandlers[event](...args);
+    }
+
+    on(event, fn) {
+        this.eventHandlers[event] = fn;
+    }
+
+    isActive() {
+        return this.active;
+    }
+
+    activate() {
+        this.active = true;
+        this._trigger("activate");
+    }
+
+    deactivate() {
+        this.active = false;
+        this._trigger("deactivate");
+    }
+
+    bind(key, modifier, action) {
+        const cmd = this.cmdMap[action];
+
+        if (!cmd) {
+            return;
+        }
+
+        const code = typeof key === "number" ? key : key.charCodeAt();
+        this.keyMap[modifier || "default"][code] = cmd;
+    }
+
+    unbind(key, modifier = "default") {
+        const code = typeof key === "number" ? key : key.charCodeAt();
+        delete this.keyMap[modifier][code];
+    }
+
+    attach(el) {
+        if (this.element) {
+            this.detach();
+        }
+
+        this._log("attaching", el);
+
+        this.element = el;
+        this.boundToElement = true;
+
+        this._addEvent(this.element, "focus", this.activate.bind(this));
+        this._addEvent(this.element, "blur", this.deactivate.bind(this));
+        this._subscribeToKeys();
+    }
+
+    detach() {
+        this._this._removeEvent(this.element, "focus", this.activate.bind(this));
+        this._this._removeEvent(this.element, "blur", this.deactivate.bind(this));
+
+        this.element = null;
+        this.boundToElement = false;
+    }
+
+    getLine() {
+        return {
+            text: this.text,
+            cursor: this.cursor
+        };
+    }
+
+    setLine(line) {
+        this.text = line.text;
+        this.cursor = line.cursor;
+        this._refresh();
+    }
+
+    // private methods
+    _addEvent(element, name, callback) {
+        if (element.addEventListener) {
+            element.addEventListener(name, callback, false);
+        } else if (element.attachEvent) {
+            element.attachEvent(`on${name}`, callback);
+        }
+    }
+
+    _removeEvent(element, name, callback) {
+        if (element.removeEventListener) {
+            element.removeEventListener(name, callback, false);
+        } else if (element.detachEvent) {
+            element.detachEvent(`on${name}`, callback);
+        }
+    }
+
+    _getKeyInfo(e) {
+        const code = e.keyCode || e.charCode;
+        const c = String.fromCharCode(code);
+
+        return {
+            code: code,
+            character: c,
+            shift: e.shiftKey,
+            control: e.controlKey,
+            alt: e.altKey,
+            isChar: true
+        };
+    }
+
+    _queue(cmd) {
+        if (this.suspended) {
+            this.cmdQueue.push(cmd);
+            return;
+        }
+
+        this._call(cmd);
+    }
+
+    _call(cmd) {
+        this._log(`calling: ${cmd.name}, previous: ${this.lastCmd}`);
+
+        if (this.inSearch && cmd.name !== "cmdKeyPress" && cmd.name !== "cmdReverseSearch") {
+            this.inSearch = false;
+
+            if (cmd.name === "cmdEsc") {
+                this.searchMatch = null;
             }
+
+            if (this.searchMatch) {
+                if (this.searchMatch.text) {
+                    this.cursor = this.searchMatch.cursoridx;
+                    this.text = this.searchMatch.text;
+                    this.history.applySearch();
+                }
+
+                this.searchMatch = null;
+            }
+
+            this._trigger("searchEnd");
+        }
+        if (!this.inSearch && this.killring.isinkill() && cmd.name.substr(0, 7) !== "cmdKill") {
+            this.killring.commit();
+        }
+        this.lastCmd = cmd.name;
+        cmd();
+    }
+
+    _suspend(asyncCall) {
+        this.suspended = true;
+        asyncCall(this._resume.bind(this));
+    }
+
+    _resume() {
+        const cmd = this.cmdQueue.shift();
+
+        if (!cmd) {
+            this.suspended = false;
+            return;
+        }
+
+        this._call(cmd);
+        this._resume();
+    }
+
+    _cmdNoOp() {
+        // no-op, used for keys we capture and ignore
+    }
+
+    _cmdEsc() {
+        // no-op, only has an effect on reverse search and that action was taken in this._call()
+    }
+
+    _cmdBackspace() {
+        if (this.cursor === 0) {
+            return;
+        }
+
+        --this.cursor;
+        this.text = this._remove(this.text, this.cursor, this.cursor + 1);
+        this._refresh();
+    }
+
+    _cmdComplete() {
+        if (!this.eventHandlers.completion) {
+            return;
+        }
+
+        this._suspend((resumeCallback) => {
+            this._trigger("completion", this.getLine(), (completion) => {
+                if (completion) {
+                    this.text = this._insert(this.text, this.cursor, completion);
+                    this._updateCursor(this.cursor + completion.length);
+                }
+
+                this.completionActive = true;
+                resumeCallback();
+            });
         });
-        var _history = config.history || new Josh.History();
-        var _killring = config.killring || new Josh.KillRing();
-        var _boundToElement = config.element ? true : false;
-        var _element = config.element || root;
-        var _active = false;
-        var _onActivate;
-        var _onDeactivate;
-        var _onCompletion;
-        var _onEnter;
-        var _onChange;
-        var _onCancel;
-        var _onEOT;
-        var _onClear;
-        var _onSearchStart;
-        var _onSearchEnd;
-        var _onSearchChange;
-        var _inSearch = false;
-        var _searchMatch;
-        var _lastSearchText = '';
-        var _text = '';
-        var _cursor = 0;
-        var _lastCmd;
-        var _completionActive;
-        var _cmdQueue = [];
-        var _suspended = false;
-        var _cmdMap = {
-            complete: cmdComplete,
-            done: cmdDone,
-            noop: cmdNoOp,
-            history_top: cmdHistoryTop,
-            history_end: cmdHistoryEnd,
-            history_next: cmdHistoryNext,
-            history_previous: cmdHistoryPrev,
-            end: cmdEnd,
-            home: cmdHome,
-            left: cmdLeft,
-            right: cmdRight,
-            cancel: cmdCancel,
-            'delete': cmdDeleteChar,
-            backspace: cmdBackspace,
-            kill_eof: cmdKillToEOF,
-            kill_wordback: cmdKillWordBackward,
-            kill_wordforward: cmdKillWordForward,
-            yank: cmdYank,
-            clear: cmdClear,
-            search: cmdReverseSearch,
-            wordback: cmdBackwardWord,
-            wordforward: cmdForwardWord,
-            yank_rotate: cmdRotate
-        };
-        var _keyMap = {
-            'default': {
-                8: cmdBackspace,    // Backspace
-                9: cmdComplete,     // Tab
-                13: cmdDone,        // Enter
-                27: cmdEsc,         // Esc
-                33: cmdHistoryTop,  // Page Up
-                34: cmdHistoryEnd,  // Page Down
-                35: cmdEnd,         // End
-                36: cmdHome,        // Home
-                37: cmdLeft,        // Left
-                38: cmdHistoryPrev, // Up
-                39: cmdRight,       // Right
-                40: cmdHistoryNext, // Down
-                46: cmdDeleteChar,  // Delete
-                10: cmdNoOp,        // Pause
-                19: cmdNoOp,        // Caps Lock
-                45: cmdNoOp         // Insert
-            },
-            control: {
-                65: cmdHome,          // A
-                66: cmdLeft,          // B
-                67: cmdCancel,        // C
-                68: cmdDeleteChar,    // D
-                69: cmdEnd,           // E
-                70: cmdRight,         // F
-                80: cmdHistoryPrev,   // P
-                78: cmdHistoryNext,   // N
-                75: cmdKillToEOF,     // K
-                89: cmdYank,          // Y
-                76: cmdClear,         // L
-                82: cmdReverseSearch  // R
-            },
-            meta: {
-                8: cmdKillWordBackward, // Backspace
-                66: cmdBackwardWord,    // B
-                68: cmdKillWordForward, // D
-                70: cmdForwardWord,     // F
-                89: cmdRotate           // Y
-            }
-        };
+    }
 
-        // public methods
-        var self = {
-            isActive: function() {
-                return _active;
-            },
-            activate: function() {
-                _active = true;
-                if(_onActivate) {
-                    _onActivate();
+    _cmdDone() {
+        const text = this.text;
+
+        this.history.accept(text);
+        this.text = "";
+        this.cursor = 0;
+
+        if (!this.eventHandlers.enter) {
+            return;
+        }
+
+        this._suspend((resumeCallback) => {
+            this._trigger("enter", text, (text) => {
+                if (text) {
+                    this.text = text;
+                    this.cursor = this.text.length;
                 }
-            },
-            deactivate: function() {
-                _active = false;
-                if(_onDeactivate) {
-                    _onDeactivate();
-                }
-            },
-            bind: function(key, action) {
-                var k = getKey(key);
-                var cmd = _cmdMap[action];
-                if(!cmd) {
-                    return;
-                }
-                _keyMap[k.modifier][k.code];
-            },
-            unbind: function(key) {
-                var k = getKey(key);
-                delete _keyMap[k.modifier][k.code];
-            },
-            attach: function(el) {
-                if(_element) {
-                    self.detach();
-                }
-                _console.log("attaching");
-                _console.log(el);
-                _element = el;
-                _boundToElement = true;
-                addEvent(_element, "focus", self.activate);
-                addEvent(_element, "blur", self.deactivate);
-                subscribeToKeys();
-            },
-            detach: function() {
-                removeEvent(_element, "focus", self.activate);
-                removeEvent(_element, "blur", self.deactivate);
-                _element = null;
-                _boundToElement = false;
-            },
-            onActivate: function(completionHandler) {
-                _onActivate = completionHandler;
-            },
-            onDeactivate: function(completionHandler) {
-                _onDeactivate = completionHandler;
-            },
-            onChange: function(changeHandler) {
-                _onChange = changeHandler;
-            },
-            onClear: function(completionHandler) {
-                _onClear = completionHandler;
-            },
-            onEnter: function(enterHandler) {
-                _onEnter = enterHandler;
-            },
-            onCompletion: function(completionHandler) {
-                _onCompletion = completionHandler;
-            },
-            onCancel: function(completionHandler) {
-                _onCancel = completionHandler;
-            },
-            onEOT: function(completionHandler) {
-                _onEOT = completionHandler;
-            },
-            onSearchStart: function(completionHandler) {
-                _onSearchStart = completionHandler;
-            },
-            onSearchEnd: function(completionHandler) {
-                _onSearchEnd = completionHandler;
-            },
-            onSearchChange: function(completionHandler) {
-                _onSearchChange = completionHandler;
-            },
-            getLine: function() {
-                return {
-                    text: _text,
-                    cursor: _cursor
-                };
-            },
-            setLine: function(line) {
-                _text = line.text;
-                _cursor = line.cursor;
-                refresh();
-            }
-        };
 
-        // private methods
-        function addEvent(element, name, callback) {
-            if(element.addEventListener) {
-                element.addEventListener(name, callback, false);
-            } else if(element.attachEvent) {
-                element.attachEvent('on' + name, callback);
-            }
-        }
+                this._trigger("change", this.getLine());
 
-        function removeEvent(element, name, callback) {
-            if(element.removeEventListener) {
-                element.removeEventListener(name, callback, false);
-            } else if(element.detachEvent) {
-                element.detachEvent('on' + name, callback);
-            }
-        }
-
-        function getKeyInfo(e) {
-            var code = e.keyCode || e.charCode;
-            var c = String.fromCharCode(code);
-            return {
-                code: code,
-                character: c,
-                shift: e.shiftKey,
-                control: e.controlKey,
-                alt: e.altKey,
-                isChar: true
-            };
-        }
-
-        function getKey(key) {
-            var k = {
-                modifier: 'default',
-                code: key.keyCode
-            };
-            if(key.metaKey || key.altKey) {
-                k.modifier = 'meta';
-            } else if(key.ctrlKey) {
-                k.modifier = 'control';
-            }
-            if(key['char']) {
-                k.code = key['char'].charCodeAt(0);
-            }
-            return k;
-        }
-
-        function queue(cmd) {
-            if(_suspended) {
-                _cmdQueue.push(cmd);
-                return;
-            }
-            call(cmd);
-        }
-
-        function call(cmd) {
-            _console.log('calling: ' + cmd.name + ', previous: ' + _lastCmd);
-            if(_inSearch && cmd.name != "cmdKeyPress" && cmd.name != "cmdReverseSearch") {
-                _inSearch = false;
-                if(cmd.name == 'cmdEsc') {
-                    _searchMatch = null;
-                }
-                if(_searchMatch) {
-                    if(_searchMatch.text) {
-                        _cursor = _searchMatch.cursoridx;
-                        _text = _searchMatch.text;
-                        _history.applySearch();
-                    }
-                    _searchMatch = null;
-                }
-                if(_onSearchEnd) {
-                    _onSearchEnd();
-                }
-            }
-            if(!_inSearch && _killring.isinkill() && cmd.name.substr(0, 7) != 'cmdKill') {
-                _killring.commit();
-            }
-            _lastCmd = cmd.name;
-            cmd();
-        }
-
-        function suspend(asyncCall) {
-            _suspended = true;
-            asyncCall(resume);
-        }
-
-        function resume() {
-            var cmd = _cmdQueue.shift();
-            if(!cmd) {
-                _suspended = false;
-                return;
-            }
-            call(cmd);
-            resume();
-        }
-
-        function cmdNoOp() {
-            // no-op, used for keys we capture and ignore
-        }
-
-        function cmdEsc() {
-            // no-op, only has an effect on reverse search and that action was taken in call()
-        }
-
-        function cmdBackspace() {
-            if(_cursor == 0) {
-                return;
-            }
-            --_cursor;
-            _text = remove(_text, _cursor, _cursor + 1);
-            refresh();
-        }
-
-        function cmdComplete() {
-            if(!_onCompletion) {
-                return;
-            }
-            suspend(function(resumeCallback) {
-                _onCompletion(self.getLine(), function(completion) {
-                    if(completion) {
-                        _text = insert(_text, _cursor, completion);
-                        updateCursor(_cursor + completion.length);
-                    }
-                    _completionActive = true;
-                    resumeCallback();
-                });
+                resumeCallback();
             });
+        });
+    }
+
+    _cmdEnd() {
+        this._updateCursor(this.text.length);
+    }
+
+    _cmdHome() {
+        this._updateCursor(0);
+    }
+
+    _cmdLeft() {
+        if (this.cursor === 0) {
+            return;
         }
 
-        function cmdDone() {
-            var text = _text;
-            _history.accept(text);
-            _text = '';
-            _cursor = 0;
-            if(!_onEnter) {
-                return;
-            }
-            suspend(function(resumeCallback) {
-                _onEnter(text, function(text) {
-                    if(text) {
-                        _text = text;
-                        _cursor = _text.length;
-                    }
-                    if(_onChange) {
-                        _onChange(self.getLine());
-                    }
-                    resumeCallback();
-                });
-            });
+        this._updateCursor(this.cursor - 1);
+    }
 
+    _cmdRight() {
+        if (this.cursor === this.text.length) {
+            return;
         }
 
-        function cmdEnd() {
-            updateCursor(_text.length);
+        this._updateCursor(this.cursor + 1);
+    }
+
+    _cmdBackwardWord() {
+        if (this.cursor === 0) {
+            return;
         }
 
-        function cmdHome() {
-            updateCursor(0);
+        this._updateCursor(this._findBeginningOfPreviousWord());
+    }
+
+    _cmdForwardWord() {
+        if (this.cursor === this.text.length) {
+            return;
         }
 
-        function cmdLeft() {
-            if(_cursor == 0) {
-                return;
-            }
-            updateCursor(_cursor - 1);
+        this._updateCursor(this._findEndOfCurrentWord());
+    }
+
+    _cmdHistoryPrev() {
+        if (!this.history.hasPrev()) {
+            return;
         }
 
-        function cmdRight() {
-            if(_cursor == _text.length) {
-                return;
-            }
-            updateCursor(_cursor + 1);
+        this._getHistory(this.history.prev.bind(this.history));
+    }
+
+    _cmdHistoryNext() {
+        if (!this.history.hasNext()) {
+            return;
         }
 
-        function cmdBackwardWord() {
-            if(_cursor == 0) {
-                return;
-            }
-            updateCursor(findBeginningOfPreviousWord());
-        }
+        this._getHistory(this.history.next.bind(this.history));
+    }
 
-        function cmdForwardWord() {
-            if(_cursor == _text.length) {
-                return;
-            }
-            updateCursor(findEndOfCurrentWord());
-        }
+    _cmdHistoryTop() {
+        this._getHistory(this.history.top.bind(this.history));
+    }
 
-        function cmdHistoryPrev() {
-            if(!_history.hasPrev()) {
-                return;
-            }
-            getHistory(_history.prev.bind(_history));
-        }
+    _cmdHistoryEnd() {
+        this._getHistory(this.history.end.bind(this.history));
+    }
 
-        function cmdHistoryNext() {
-            if(!_history.hasNext()) {
-                return;
-            }
-            getHistory(_history.next.bind(_history));
-        }
-
-        function cmdHistoryTop() {
-            getHistory(_history.top.bind(_history));
-        }
-
-        function cmdHistoryEnd() {
-            getHistory(_history.end.bind(_history));
-        }
-
-        function cmdDeleteChar() {
-            if(_text.length == 0) {
-                if(_onEOT) {
-                    _onEOT();
-                    return;
-                }
-            }
-            if(_cursor == _text.length) {
-                return;
-            }
-            _text = remove(_text, _cursor, _cursor + 1);
-            refresh();
-        }
-
-        function cmdCancel() {
-            if(_onCancel) {
-                _onCancel();
+    _cmdDeleteChar() {
+        if (this.text.length === 0) {
+            if (this.eventHandlers.eot) {
+                return this._trigger("eot");
             }
         }
 
-        function cmdKillToEOF() {
-            _killring.append(_text.substr(_cursor));
-            _text = _text.substr(0, _cursor);
-            refresh();
+        if (this.cursor === this.text.length) {
+            return;
         }
 
-        function cmdKillWordForward() {
-            if(_text.length == 0) {
-                return;
-            }
-            if(_cursor == _text.length) {
-                return;
-            }
-            var end = findEndOfCurrentWord();
-            if(end == _text.length - 1) {
-                return cmdKillToEOF();
-            }
-            _killring.append(_text.substring(_cursor, end))
-            _text = remove(_text, _cursor, end);
-            refresh();
+        this.text = this._remove(this.text, this.cursor, this.cursor + 1);
+        this._refresh();
+    }
+
+    _cmdCancel() {
+        this._trigger("cancel");
+    }
+
+    _cmdKillToEOF() {
+        this.killring.append(this.text.substr(this.cursor));
+        this.text = this.text.substr(0, this.cursor);
+        this._refresh();
+    }
+
+    _cmdKillWordForward() {
+        if (this.text.length === 0) {
+            return;
         }
 
-        function cmdKillWordBackward() {
-            if(_cursor == 0) {
-                return;
-            }
-            var oldCursor = _cursor;
-            _cursor = findBeginningOfPreviousWord();
-            _killring.prepend(_text.substring(_cursor, oldCursor));
-            _text = remove(_text, _cursor, oldCursor);
-            refresh();
+        if (this.cursor === this.text.length) {
+            return;
         }
 
-        function cmdYank() {
-            var yank = _killring.yank();
-            if(!yank) {
-                return;
-            }
-            _text = insert(_text, _cursor, yank);
-            updateCursor(_cursor + yank.length);
+        const end = this._findEndOfCurrentWord();
+        if (end === this.text.length - 1) {
+            return this._cmdKillToEOF();
         }
 
-        function cmdRotate() {
-            var lastyanklength = _killring.lastyanklength();
-            if(!lastyanklength) {
-                return;
-            }
-            var yank = _killring.rotate();
-            if(!yank) {
-                return;
-            }
-            var oldCursor = _cursor;
-            _cursor = _cursor - lastyanklength;
-            _text = remove(_text, _cursor, oldCursor);
-            _text = insert(_text, _cursor, yank);
-            updateCursor(_cursor + yank.length);
+        this.killring.append(this.text.substring(this.cursor, end));
+        this.text = this._remove(this.text, this.cursor, end);
+        this._refresh();
+    }
+
+    _cmdKillWordBackward() {
+        if (this.cursor === 0) {
+            return;
         }
 
-        function cmdClear() {
-            if(_onClear) {
-                _onClear();
-            } else {
-                refresh();
+        const oldCursor = this.cursor;
+        this.cursor = this._findBeginningOfPreviousWord();
+        this.killring.prepend(this.text.substring(this.cursor, oldCursor));
+        this.text = this._remove(this.text, this.cursor, oldCursor);
+        this._refresh();
+    }
+
+    _cmdYank() {
+        const yank = this.killring.yank();
+
+        if (!yank) {
+            return;
+        }
+
+        this.text = this._insert(this.text, this.cursor, yank);
+        this._updateCursor(this.cursor + yank.length);
+    }
+
+    _cmdRotate() {
+        const lastyanklength = this.killring.lastyanklength();
+
+        if (!lastyanklength) {
+            return;
+        }
+
+        const yank = this.killring.rotate();
+
+        if (!yank) {
+            return;
+        }
+
+        const oldCursor = this.cursor;
+        this.cursor = this.cursor - lastyanklength;
+        this.text = this._remove(this.text, this.cursor, oldCursor);
+        this.text = this._insert(this.text, this.cursor, yank);
+        this._updateCursor(this.cursor + yank.length);
+    }
+
+    _cmdClear() {
+        if (this.eventHandlers.clear) {
+            this._trigger("clear");
+        } else {
+            this._refresh();
+        }
+    }
+
+    _cmdReverseSearch() {
+        if (!this.inSearch) {
+            this.inSearch = true;
+            this._trigger("searchStart");
+            this._trigger("searchChange", {});
+        } else {
+            if (!this.searchMatch) {
+                this.searchMatch = { term: "" };
             }
-        }
 
-        function cmdReverseSearch() {
-            if(!_inSearch) {
-                _inSearch = true;
-                if(_onSearchStart) {
-                    _onSearchStart();
-                }
-                if(_onSearchChange) {
-                    _onSearchChange({});
-                }
-            } else {
-                if(!_searchMatch) {
-                    _searchMatch = {term: ''};
-                }
-                search();
-            }
+            this._search();
         }
+    }
 
-        function updateCursor(position) {
-            _cursor = position;
-            refresh();
+    _updateCursor(position) {
+        this.cursor = position;
+        this._refresh();
+    }
+
+    _addText(c) {
+        this.text = this._insert(this.text, this.cursor, c);
+        ++this.cursor;
+        this._refresh();
+    }
+
+    _addSearchText(c) {
+        if (!this.searchMatch) {
+            this.searchMatch = { term: "" };
         }
+        this.searchMatch.term += c;
+        this._search();
+    }
 
-        function addText(c) {
-            _text = insert(_text, _cursor, c);
-            ++_cursor;
-            refresh();
+    _search() {
+        this._log(`searchtext: ${this.searchMatch.term}`);
+
+        const match = this.history.search(this.searchMatch.term);
+
+        if (match !== null) {
+            this.searchMatch = match;
+
+            this._log(`match: ${match}`);
+
+            this._trigger("searchChange", match);
         }
+    }
 
-        function addSearchText(c) {
-            if(!_searchMatch) {
-                _searchMatch = {term: ''};
-            }
-            _searchMatch.term += c;
-            search();
-        }
+    _refresh() {
+        this._trigger("change", this.getLine());
+    }
 
-        function search() {
-            _console.log("searchtext: " + _searchMatch.term);
-            var match = _history.search(_searchMatch.term);
-            if(match != null) {
-                _searchMatch = match;
-                _console.log("match: " + match);
-                if(_onSearchChange) {
-                    _onSearchChange(match);
-                }
-            }
-        }
+    _getHistory(historyCall) {
+        this.history.update(this.text);
+        this.text = historyCall();
+        this._updateCursor(this.text.length);
+    }
 
-        function refresh() {
-            if(_onChange) {
-                _onChange(self.getLine());
-            }
-        }
+    _findBeginningOfPreviousWord() {
+        const position = this.cursor - 1;
 
-        function getHistory(historyCall) {
-            _history.update(_text);
-            _text = historyCall();
-            updateCursor(_text.length);
-        }
-
-        function findBeginningOfPreviousWord() {
-            var position = _cursor - 1;
-            if(position < 0) {
-                return 0;
-            }
-            var word = false;
-            for(var i = position; i > 0; i--) {
-                var word2 = isWordChar(_text[i]);
-                if(word && !word2) {
-                    return i + 1;
-                }
-                word = word2;
-            }
+        if (position < 0) {
             return 0;
         }
 
-        function findEndOfCurrentWord() {
-            if(_text.length == 0) {
-                return 0;
+        let word = false;
+        for (let i = position; i > 0; i--) {
+            const word2 = this._isWordChar(this.text[i]);
+
+            if (word && !word2) {
+                return i + 1;
             }
-            var position = _cursor + 1;
-            if(position >= _text.length) {
-                return _text.length - 1;
-            }
-            var word = false;
-            for(var i = position; i < _text.length; i++) {
-                var word2 = isWordChar(_text[i]);
-                if(word && !word2) {
-                    return i;
-                }
-                word = word2;
-            }
-            return _text.length - 1;
+
+            word = word2;
         }
 
-        function isWordChar(c) {
-            if(c == undefined) {
+        return 0;
+    }
+
+    _findEndOfCurrentWord() {
+        if (this.text.length === 0) {
+            return 0;
+        }
+
+        const position = this.cursor + 1;
+
+        if (position >= this.text.length) {
+            return this.text.length - 1;
+        }
+
+        let word = false;
+        for (let i = position; i < this.text.length; i++) {
+            const word2 = this._isWordChar(this.text[i]);
+
+            if (word && !word2) {
+                return i;
+            }
+
+            word = word2;
+        }
+
+        return this.text.length - 1;
+    }
+
+    _isWordChar(c) {
+        if (!c) {
+            return false;
+        }
+
+        const code = c.charCodeAt(0);
+        return (code >= 48 && code <= 57) || (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+    }
+
+    _remove(text, from, to) {
+        if (text.length <= 1 || text.length <= to - from) {
+            return "";
+        }
+
+        if (from === 0) {
+            // delete leading characters
+            return text.substr(to);
+        }
+
+        const left = text.substr(0, from);
+        const right = text.substr(to);
+
+        return left + right;
+    }
+
+    _insert(text, idx, ins) {
+        if (idx === 0) {
+            return ins + text;
+        }
+
+        if (idx >= text.length) {
+            return text + ins;
+        }
+
+        const left = text.substr(0, idx);
+        const right = text.substr(idx);
+
+        return left + ins + right;
+    }
+
+    _subscribeToKeys() {
+        // set up key capture
+        this.element.onkeydown = (e) => {
+            // return as unhandled if we're not active or the key is just a modifier key
+            if (!this.active || e.keyCode === 16 || e.keyCode === 17 || e.keyCode === 18 || e.keyCode === 91) {
+                return true;
+            }
+
+            // check for some special first keys, regardless of modifiers
+            this._log(`key: ${e.keyCode}`);
+            let cmd = this.keyMap.default[e.keyCode];
+
+            // intercept ctrl- and meta- sequences (may override the non-modifier cmd captured above
+            let mod;
+            if (e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
+                mod = this.keyMap.control[e.keyCode];
+
+                if (mod) {
+                    cmd = mod;
+                }
+            } else if ((e.altKey || e.metaKey) && !e.ctrlKey && !e.shiftKey) {
+                mod = this.keyMap.meta[e.keyCode];
+
+                if (mod) {
+                    cmd = mod;
+                }
+            }
+
+            if (!cmd) {
+                return true;
+            }
+
+            this._queue(cmd);
+            e.preventDefault();
+            e.stopPropagation();
+            e.cancelBubble = true;
+
+            return false;
+        };
+
+        this.element.onkeypress = (e) => {
+            if (!this.active) {
+                return true;
+            }
+
+            const key = this._getKeyInfo(e);
+            if (key.code === 0 || e.defaultPrevented || e.metaKey || e.altKey || e.ctrlKey) {
                 return false;
             }
-            var code = c.charCodeAt(0);
-            return (code >= 48 && code <= 57)
-            || (code >= 65 && code <= 90)
-            || (code >= 97 && code <= 122);
-        }
 
-        function remove(text, from, to) {
-            if(text.length <= 1 || text.length <= to - from) {
-                return '';
-            }
-            if(from == 0) {
-
-                // delete leading characters
-                return text.substr(to);
-            }
-            var left = text.substr(0, from);
-            var right = text.substr(to);
-            return left + right;
-        }
-
-        function insert(text, idx, ins) {
-            if(idx == 0) {
-                return ins + text;
-            }
-            if(idx >= text.length) {
-                return text + ins;
-            }
-            var left = text.substr(0, idx);
-            var right = text.substr(idx);
-            return left + ins + right;
-        }
-
-        function subscribeToKeys() {
-
-            // set up key capture
-            _element.onkeydown = function(e) {
-                e = e || window.event;
-
-                // return as unhandled if we're not active or the key is just a modifier key
-                if(!_active || e.keyCode == 16 || e.keyCode == 17 || e.keyCode == 18 || e.keyCode == 91) {
-                    return true;
+            this._queue(() => {
+                if (this.inSearch) {
+                    this._addSearchText(key.character);
+                } else {
+                    this._addText(key.character);
                 }
+            });
 
-                // check for some special first keys, regardless of modifiers
-                _console.log("key: " + e.keyCode);
-                var cmd = _keyMap['default'][e.keyCode];
-                // intercept ctrl- and meta- sequences (may override the non-modifier cmd captured above
-                var mod;
-                if(e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
-                    mod = _keyMap.control[e.keyCode];
-                    if(mod) {
-                        cmd = mod;
-                    }
-                } else if((e.altKey || e.metaKey) && !e.ctrlKey && !e.shiftKey) {
-                    mod = _keyMap.meta[e.keyCode];
-                    if(mod) {
-                        cmd = mod;
-                    }
-                }
-                if(!cmd) {
-                    return true;
-                }
-                queue(cmd);
-                e.preventDefault();
-                e.stopPropagation();
-                e.cancelBubble = true;
-                return false;
-            };
+            e.preventDefault();
+            e.stopPropagation();
+            e.cancelBubble = true;
 
-            _element.onkeypress = function(e) {
-                if(!_active) {
-                    return true;
-                }
-                var key = getKeyInfo(e);
-                if(key.code == 0 || e.defaultPrevented || e.metaKey || e.altKey || e.ctrlKey) {
-                    return false;
-                }
-                queue(function cmdKeyPress() {
-                    if(_inSearch) {
-                        addSearchText(key.character);
-                    } else {
-                        addText(key.character);
-                    }
-                });
-                e.preventDefault();
-                e.stopPropagation();
-                e.cancelBubble = true;
-                return false;
-            };
-        }
-        if(_boundToElement) {
-            self.attach(_element);
-        } else {
-            subscribeToKeys();
-        }
-        return self;
-    };
-}));
+            return false;
+        };
+    }
+}
+
+export default ReadLine;

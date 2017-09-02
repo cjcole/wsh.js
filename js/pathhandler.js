@@ -14,179 +14,187 @@
  * limitations under the License.
  *-------------------------------------------------------------------------*/
 
-(function (root, factory) {
-    root.Josh = root.Josh || {};
+import templates from "./templates";
 
-    if (typeof define === "function" && define.amd) {
-        define(["jquery"], function ($) {
-            return (root.Josh.PathHandler = factory(root, root.Josh, $));
-        });
-    } else if (typeof module === "object" && module.exports) {
-        module.exports = (root.Josh.PathHandler = factory(root, root.Josh, require("jquery")));
-    } else {
-        root.Josh.PathHandler = factory(root, root.Josh, root.$);
+class PathHandler {
+    constructor(shell, config = {}) {
+        this.debug = !!config.debug;
+        this.shell = shell;
+        this.originalDefault = this.shell.getCommandHandler("_default");
+        this.current = null;
+
+        this._load();
     }
-}(this, function (root, Josh, $) {
-    return function(shell, config) {
-        config = config || {};
-        var _console = config.console || (Josh.Debug && root.console ? root.console : {
-            log: function() {
-            }
-        });
-        var _shell = shell;
-        _shell.templates.not_found = ({ cmd, path }) => `<div>${cmd}: ${path}: No such file or directory</div>`;
-        _shell.templates.ls = ({ nodes }) => `<div>${nodes.map((node) => `<span>${node.name}&nbsp;</span>`).join("")}</div>`;
-        _shell.templates.ls_ex = ({ nodes }) => `<div>${nodes.map((node) => `<div>${node.name}&nbsp;</div>`).join("")}</div>`;
-        _shell.templates.pwd = ({ node }) => `div>${node.path}&nbsp;</div>`;
-        _shell.templates.prompt = ({ node }) => `${node.path} $`;
-        var _original_default = _shell.getCommandHandler('_default');
-        var self = {
-            current: null,
-            pathCompletionHandler: pathCompletionHandler,
-            commandAndPathCompletionHandler: commandAndPathCompletionHandler,
-            getNode: function(path, callback) {
-                callback();
-            },
-            getChildNodes: function(node, callback) {
-                callback([]);
-            },
-            getPrompt: function() {
-                return _shell.templates.prompt({node: self.current});
-            }
-        };
 
-        _shell.setCommandHandler("ls", {
-            exec: ls,
-            completion: pathCompletionHandler
-        });
-        _shell.setCommandHandler("pwd", {
-            exec: pwd,
-            completion: pathCompletionHandler
-        });
-        _shell.setCommandHandler("cd", {
-            exec: cd,
-            completion: pathCompletionHandler
-        });
-        _shell.setCommandHandler("_default", {
-            exec: _original_default.exec,
-            completion: commandAndPathCompletionHandler
-        });
-        _shell.onNewPrompt(function(callback) {
-            callback(self.getPrompt());
+    _log(...args) {
+        this.debug && console.log(...args);
+    }
+
+    _load() {
+        this.shell.setCommandHandler("ls", {
+            exec: this._ls.bind(this),
+            completion: this._pathCompletionHandler.bind(this)
         });
 
-        function commandAndPathCompletionHandler(cmd, arg, line, callback) {
-            _console.log("calling command and path completion handler w/ cmd: '"+cmd+"', arg: '"+arg+"'");
-            if(!arg) {
-                arg = cmd;
-            }
-            if(arg[0] == '.' || arg[0] == '/') {
-                return pathCompletionHandler(cmd, arg, line, callback);
-            }
-            return _original_default.completion(cmd, arg, line, callback);
+        this.shell.setCommandHandler("pwd", {
+            exec: this._pwd.bind(this),
+            completion: this._pathCompletionHandler.bind(this)
+        });
+
+        this.shell.setCommandHandler("cd", {
+            exec: this._cd.bind(this),
+            completion: this._pathCompletionHandler.bind(this)
+        });
+
+        this.shell.setCommandHandler("_default", {
+            exec: this.originalDefault.exec,
+            completion: this._commandAndpathCompletionHandler.bind(this)
+        });
+
+        this.shell.onNewPrompt((callback) => {
+            callback(this.getPrompt());
+        });
+    }
+
+    getNode(path, callback) {
+        callback();
+    }
+
+    getChildNodes(node, callback) {
+        callback([]);
+    }
+
+    getPrompt() {
+        return templates.prompt({ node: this.current });
+    }
+
+    _commandAndpathCompletionHandler(cmd, arg, line, callback) {
+        this._log(`calling command and path completion handler w/ cmd: '${cmd}', arg: '${arg}'`);
+
+        arg = arg || cmd;
+
+        if (arg[0] === "." || arg[0] === "/") {
+            return this._pathCompletionHandler(cmd, arg, line, callback);
         }
 
-        function pathCompletionHandler(cmd, arg, line, callback) {
-            _console.log("completing '" + arg + "'");
-            if(!arg) {
-                _console.log("completing on current");
-                return completeChildren(self.current, '', callback);
-            }
-            if(arg[arg.length - 1] == '/') {
-                _console.log("completing children w/o partial");
-                return self.getNode(arg, function(node) {
-                    if(!node) {
-                        _console.log("no node for path");
-                        return callback();
-                    }
-                    return completeChildren(node, '', callback);
-                });
-            }
-            var partial = "";
-            var lastPathSeparator = arg.lastIndexOf("/");
-            var parent = arg.substr(0, lastPathSeparator + 1);
-            partial = arg.substr(lastPathSeparator + 1);
-            if(partial === '..' || partial === '.') {
-                return callback({
-                    completion: '/',
-                    suggestions: []
-                });
-            }
-            _console.log("completing children via parent '" + parent+"'  w/ partial '"+partial+"'");
-            return self.getNode(parent, function(node) {
-                if(!node) {
-                    _console.log("no node for parent path");
+        return this.originalDefault.completion(cmd, arg, line, callback);
+    }
+
+    _pathCompletionHandler(cmd, arg, line, callback) {
+        this._log(`completing '${arg}'`);
+
+        if (!arg) {
+            this._log("completing on current");
+
+            return this._completeChildren(this.current, "", callback);
+        }
+
+        if (arg[arg.length - 1] === "/") {
+            this._log("completing children w/o partial");
+
+            return this.getNode(arg, (node) => {
+                if (!node) {
+                    this._log("no node for path");
+
                     return callback();
                 }
-                return completeChildren(node, partial, function(completion) {
-                    if(completion && completion.completion == '' && completion.suggestions.length == 1) {
-                        return callback({
-                            completion: '/',
-                            suggestions: []
-                        });
-                    }
-                    return callback(completion);
-                });
+
+                return this._completeChildren(node, "", callback);
             });
         }
 
-        function completeChildren(node, partial, callback) {
-            self.getChildNodes(node, function(childNodes) {
-                callback(_shell.bestMatch(partial, childNodes.map((x) => x.name)));
+        const lastPathSeparator = arg.lastIndexOf("/");
+        const parent = arg.substr(0, lastPathSeparator + 1);
+        const partial = arg.substr(lastPathSeparator + 1);
+
+        if (partial === ".." || partial === ".") {
+            return callback({
+                completion: "/",
+                suggestions: []
             });
         }
 
-        function cd(cmd, args, callback) {
-            self.getNode(args[0], function(node) {
-                if(!node) {
-                    return callback(_shell.templates.not_found({cmd: 'cd', path: args[0]}));
-                }
-                self.current = node;
+        this._log(`completing children via parent '${parent}'  w/ partial '${partial}'`);
+
+        return this.getNode(parent, (node) => {
+            if (!node) {
+                this._log("no node for parent path");
+
                 return callback();
+            }
+
+            return this._completeChildren(node, partial, (completion) => {
+                if (completion && completion.completion === "" && completion.suggestions.length === 1) {
+                    return callback({
+                        completion: "/",
+                        suggestions: []
+                    });
+                }
+
+                return callback(completion);
             });
+        });
+    }
+
+    _completeChildren(node, partial, callback) {
+        this.getChildNodes(node, (childNodes) => {
+            callback(this.shell.bestMatch(partial, childNodes.map((x) => x.name)));
+        });
+    }
+
+    _cd(cmd, args, callback) {
+        this.getNode(args[0], (node) => {
+            if (!node) {
+                return callback(templates.notFound({ cmd: "cd", path: args[0] }));
+            }
+
+            this.current = node;
+
+            return callback();
+        });
+    }
+
+    _pwd(cmd, args, callback) {
+        callback(templates.pwd({ node: this.current }));
+    }
+
+    _ls(cmd, args, callback) {
+        this._log("ls");
+
+        args = args || [];
+
+        const full = args && args[0] === "-l";
+
+        if (full) {
+            args.shift();
         }
 
-        function pwd(cmd, args, callback) {
-            callback(_shell.templates.pwd({node: self.current}));
+        if (!args[0]) {
+            return this._renderLs(this.current, this.current.path, full, callback);
         }
 
-        function ls(cmd, args, callback) {
-            _console.log('ls');
+        return this.getNode(args[0], (node) => {
+            this._renderLs(node, args[0], full, callback);
+        });
+    }
 
-            args = args || []
+    _renderLs(node, path, full, callback) {
+        if (!node) {
+            return callback(templates.notFound({ cmd: "ls", path: path }));
+        }
 
-            var full = args && args[0] === "-l";
+        const getChildNodes = full ? this.getChildNodesEx : this.getChildNodes;
+
+        return getChildNodes(node, (children) => {
+            this._log(`finish render: ${node.name}`);
 
             if (full) {
-                args.shift();
+                callback(templates.lsEx({ nodes: children }));
+            } else {
+                callback(templates.ls({ nodes: children }));
             }
+        });
+    }
+}
 
-            if(!args[0]) {
-                return render_ls(self.current, self.current.path, full, callback);
-            }
-            return self.getNode(args[0], function(node) {
-                render_ls(node, args[0], full, callback);
-            });
-        }
-
-        function render_ls(node, path, full, callback) {
-            if(!node) {
-                return callback(_shell.templates.not_found({cmd: 'ls', path: path}));
-            }
-
-            var getChildNodes = full ? self.getChildNodesEx : self.getChildNodes;
-
-            return getChildNodes(node, function(children) {
-                _console.log("finish render: " + node.name);
-
-                if (full) {
-                    callback(_shell.templates.ls_ex({nodes: children}));
-                } else {
-                    callback(_shell.templates.ls({nodes: children}));
-                }
-            });
-        }
-
-        return self;
-    };
-}));
+export default PathHandler;

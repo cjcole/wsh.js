@@ -15,10 +15,9 @@
  *-------------------------------------------------------------------------*/
 
 /* global window */
-console.log("H");
+
 class History {
     constructor(config = {}) {
-        console.log("HISTORY");
         this.debug = !!config.debug;
         this.history = config.history || [ "" ];
         this.cursor = config.cursor || 0;
@@ -26,7 +25,7 @@ class History {
         this.lastSearchTerm = "";
         this.storage = config.storage || window.localStorage;
         this.key = config.key || "josh.history";
-        this.suspend = false;
+        this.suspended = false;
 
         this._load();
     }
@@ -69,6 +68,7 @@ class History {
     _setHistory() {
         this.searchCursor = this.cursor;
         this.lastSearchTerm = "";
+
         return this.history[this.cursor];
     }
 
@@ -79,15 +79,15 @@ class History {
     }
 
     suspend() {
-        this.suspend = true;
+        this.suspended = true;
     }
 
     resume() {
-        this.suspend = false;
+        this.suspended = false;
     }
 
     accept(text) {
-        if (this.suspend) {
+        if (this.suspended) {
             return this._log(`history suspended ${text}`);
         }
 
@@ -115,7 +115,7 @@ class History {
     }
 
     items() {
-        return this.history.slice(0, this.history.length - 1);
+        return this.history.slice(0);
     }
 
     clear() {
@@ -161,8 +161,7 @@ class History {
         if (term === this.lastSearchTerm) {
             this.searchCursor--;
             iterations--;
-        }
-        if (!term) {
+        } else if (!term) {
             term = this.lastSearchTerm;
         }
 
@@ -190,17 +189,15 @@ class History {
     }
 
     applySearch() {
-        if (this.lastSearchTerm) {
-            this._log(`setting history to position ${this.searchCursor}(${this.cursor}): ${this.history[this.searchCursor]}`);
-            this.cursor = this.searchCursor;
-            return this.history[this.cursor];
+        if (!this.lastSearchTerm) {
+            return null;
         }
 
-        return null;
+        this._log(`setting history to position ${this.searchCursor}(${this.cursor}): ${this.history[this.searchCursor]}`);
+        this.cursor = this.searchCursor;
+
+        return this.history[this.cursor];
     }
 }
-
-window.Josh = window.Josh || {}
-window.Josh.History = History;
 
 export default History;
