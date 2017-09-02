@@ -1,24 +1,25 @@
 {
-  "name": "josh.js",
-  "version": "0.2.10",
-  "homepage": "http://sdether.github.io/josh.js/",
-  "description": "Javascript Online SHell provides a toolkit for building bash-like command line consoles for web pages.",
+  "name": "wsh.js",
+  "version": "0.0.1",
+  "homepage": "https://github.com/mattiasrunge/josh.js",
+  "description": "WebSHell provides a toolkit for building bash-like command line consoles for web pages.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sdether/josh.js.git"
+    "url": "git+https://github.com/mattiasrunge/josh.js.git"
   },
   "keywords": [
     "shell",
+    "bash",
     "josh"
   ],
-  "author": "Arne Claassen <arne@claassen.net>",
+  "author": "Mattias Runge-Broberg <mattias@runge.se>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/sdether/josh.js/issues"
+    "url": "https://github.com/mattiasrunge/josh.js/issues"
   },
   "dependencies": {
     "argv-split": "^2.0.1",
