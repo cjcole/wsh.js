@@ -536,17 +536,17 @@ class ReadLine {
         this._refresh();
     }
 
-    _addText(c) {
-        this.text = this._insert(this.text, this.cursor, c);
-        ++this.cursor;
+    _addText(text) {
+        this.text = this._insert(this.text, this.cursor, text);
+        this.cursor += text.length;
         this._refresh();
     }
 
-    _addSearchText(c) {
+    _addSearchText(text) {
         if (!this.searchMatch) {
             this.searchMatch = { term: "" };
         }
-        this.searchMatch.term += c;
+        this.searchMatch.term += text;
         this._search();
     }
 
@@ -662,7 +662,7 @@ class ReadLine {
 
     _subscribeToKeys() {
         // set up key capture
-        this.element.onkeydown = (e) => {
+        this._addEvent(this.element, "keydown", (e) => {
             // return as unhandled if we're not active or the key is just a modifier key
             if (!this.active || e.keyCode === 16 || e.keyCode === 17 || e.keyCode === 18 || e.keyCode === 91) {
                 return true;
@@ -698,9 +698,9 @@ class ReadLine {
             e.cancelBubble = true;
 
             return false;
-        };
+        });
 
-        this.element.onkeypress = (e) => {
+        this._addEvent(this.element, "keypress", (e) => {
             if (!this.active) {
                 return true;
             }
@@ -723,7 +723,40 @@ class ReadLine {
             e.cancelBubble = true;
 
             return false;
-        };
+        });
+
+        this._addEvent(this.element, "paste", (e) => {
+            if (!this.active) {
+                return true;
+            }
+
+            let pastedText = "";
+
+            if (window.clipboardData && window.clipboardData.getData) {
+                pastedText = window.clipboardData.getData("Text");
+            } else if (e.clipboardData && e.clipboardData.getData) {
+                pastedText = e.clipboardData.getData("text/plain");
+            }
+
+            const key = this._getKeyInfo(e);
+            if (key.code === 0 || e.defaultPrevented || e.metaKey || e.altKey || e.ctrlKey) {
+                return false;
+            }
+
+            this._queue(() => {
+                if (this.inSearch) {
+                    this._addSearchText(pastedText);
+                } else {
+                    this._addText(pastedText);
+                }
+            });
+
+            e.preventDefault();
+            e.stopPropagation();
+            e.cancelBubble = true;
+
+            return false;
+        });
     }
 }
 
