@@ -1,7 +1,7 @@
 {
   "name": "wsh.js",
   "version": "0.0.1",
-  "homepage": "https://github.com/mattiasrunge/josh.js",
+  "homepage": "https://github.com/mattiasrunge/wsh.js",
   "description": "WebSHell provides a toolkit for building bash-like command line consoles for web pages.",
   "main": "index.js",
   "scripts": {
@@ -9,17 +9,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mattiasrunge/josh.js.git"
+    "url": "git+https://github.com/mattiasrunge/wsh.js.git"
   },
   "keywords": [
     "shell",
     "bash",
-    "josh"
+    "josh",
+    "wsh"
   ],
   "author": "Mattias Runge-Broberg <mattias@runge.se>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/mattiasrunge/josh.js/issues"
+    "url": "https://github.com/mattiasrunge/wsh.js/issues"
   },
   "dependencies": {
     "argv-split": "^2.0.1",
