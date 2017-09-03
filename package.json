@@ -3,7 +3,7 @@
   "version": "0.0.2",
   "homepage": "https://github.com/mattiasrunge/wsh.js",
   "description": "WebSHell provides a toolkit for building bash-like command line consoles for web pages.",
-  "main": "index.js",
+  "main": "lib/terminal.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
