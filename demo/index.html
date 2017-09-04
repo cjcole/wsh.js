@@ -1,0 +1,50 @@
+<html>
+    <body>
+        <style>
+            #shell-panel {
+                background-color: black;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                padding: 5px;
+            }
+
+            #shell-view {
+                color: white;
+                font-family: "Courier New", Courier, monospace;
+                font-weight: 500;
+                font-size: 13px;
+                line-height: 16px;
+                overflow: scroll;
+                overflow-x: hidden;
+                overflow-y: scroll;
+                white-space: pre-wrap;
+            }
+
+            #shell-view .promptUser {
+                font-weight: 700;
+                color: #8AE234;
+            }
+
+            #shell-view .promptPath {
+                font-weight: 700;
+                color: #729FCF;
+            }
+
+            #shell-view .error {
+                font-weight: 700;
+                color: #FF3C3C;
+            }
+
+            #shell-view .bold {
+                font-weight: bold;
+            }
+        </style>
+        <div id="shell-panel">
+            <div id="shell-view"></div>
+        </div>
+        <script src="build/bundle.js"></script>
+    </body>
+</html>
