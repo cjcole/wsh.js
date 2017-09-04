@@ -44,10 +44,7 @@ module.exports = {
         modules: [
             "node_modules",
             path.join(__dirname, "node_modules")
-        ],
-        alias: {
-            jquery: "jquery/src/jquery"
-        }
+        ]
     },
     node: {
         fs: "empty",

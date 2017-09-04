@@ -1,6 +1,6 @@
 {
   "name": "wsh.js",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "homepage": "https://github.com/mattiasrunge/wsh.js",
   "description": "WebSHell provides a toolkit for building bash-like command line consoles for web pages.",
   "main": "lib/terminal.js",
@@ -23,8 +23,7 @@
     "url": "https://github.com/mattiasrunge/wsh.js/issues"
   },
   "dependencies": {
-    "argv-split": "^2.0.1",
-    "jquery": "^3.2.0"
+    "argv-split": "^2.0.1"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
