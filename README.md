@@ -3,6 +3,9 @@ wsh.js
 
 The shell is intended for implementing a simple terminal interface on a webpage.
 
+## Demo
+A simple demo can be found [here](https://mattiasrunge.github.io/wsh.js/demo/).
+
 ## History and credit
 This is a fork of [josh.js](http://sdether.github.io/josh.js/) to implement new features and bring up to es6/es7.
 
