@@ -18,14 +18,14 @@ const terminal = new Terminal({
 });
 
 terminal.on("activating", () => {
-    terminal.log("<strong>*****************************</strong>");
-    terminal.log("<strong>**                         **</strong>");
-    terminal.log("<strong>**    Welcome to wsh.js    **</strong>");
-    terminal.log("<strong>**                         **</strong>");
-    terminal.log("<strong>*****************************</strong>");
-    terminal.log(" ");
-    terminal.log("<i>Type help to see available commands</i>");
-    terminal.log(" ");
+    terminal.log("<strong>*****************************</strong>\n");
+    terminal.log("<strong>**                         **</strong>\n");
+    terminal.log("<strong>**    Welcome to wsh.js    **</strong>\n");
+    terminal.log("<strong>**                         **</strong>\n");
+    terminal.log("<strong>*****************************</strong>\n");
+    terminal.log(" \n");
+    terminal.log("<i>Type help to see available commands</i>\n");
+    terminal.log(" \n");
 });
 
 terminal.activate();
