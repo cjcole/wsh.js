@@ -1,5 +1,6 @@
 
 import Terminal from "../lib/terminal";
+import cmdQuestion from "./cmds/question";
 
 const terminal = new Terminal({
     getNode: async (path) => {
@@ -10,12 +11,14 @@ const terminal = new Terminal({
     },
     getChildNodes: async (path) => {
         return [
-            { name: "testA", path: `${path}/testA` },
-            { name: "testB", path: `${path}/testB` },
-            { name: "testC", path: `${path}/testC` }
+            { name: "etc", path: `${path}/etc` },
+            { name: "var", path: `${path}/var` },
+            { name: "usr", path: `${path}/usr` }
         ];
     }
 });
+
+terminal.setCommandHandler("question", cmdQuestion);
 
 terminal.on("activating", () => {
     terminal.log("<strong>*****************************</strong>\n");

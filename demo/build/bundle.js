@@ -8474,40 +8474,23 @@ Object.defineProperty(exports, "__esModule", {
 });
 
 var templates = {
-    badCommand: function badCommand(_ref) {
-        var cmd = _ref.cmd;
-        return "<div class=\"error\">Unrecognized command:&nbsp;" + cmd + "</div>";
-    },
-    badSplit: function badSplit(_ref2) {
-        var error = _ref2.error;
-        return "<div class=\"error\">Unable&nbsp;to&nbsp;parse&nbsp;command:&nbsp;" + error + "</div>";
-    },
-    inputCmd: function inputCmd(_ref3) {
-        var id = _ref3.id;
+    inputCmd: function inputCmd(_ref) {
+        var id = _ref.id;
         return "<div id=\"" + id + "\"><span class=\"prompt\"></span>&nbsp;<span class=\"input\"><span class=\"left\"></span><span class=\"cursor\"></span><span class=\"right\"></span></span></div>";
     },
-    inputSearch: function inputSearch(_ref4) {
-        var id = _ref4.id;
+    inputSearch: function inputSearch(_ref2) {
+        var id = _ref2.id;
         return "<div id=\"" + id + "\">(reverse-i-search)`<span class=\"searchterm\"></span>':&nbsp;<span class=\"input\"><span class=\"left\"></span><span class=\"cursor\"></span><span class=\"right\"></span></span></div>";
     },
-    suggest: function suggest(_ref5) {
-        var suggestions = _ref5.suggestions;
+    suggest: function suggest(_ref3) {
+        var suggestions = _ref3.suggestions;
         return "<div>" + suggestions.map(function (suggestion) {
             return "<div>" + suggestion + "</div>";
         }).join("") + "</div>";
     },
-    notFound: function notFound(_ref6) {
-        var cmd = _ref6.cmd,
-            path = _ref6.path;
-        return "<div>" + cmd + ": " + path + ": No such file or directory</div>";
-    },
-    prompt: function prompt(_ref7) {
-        var node = _ref7.node;
-        return "<span class=\"prompt\">" + node.path + " $</span>";
-    },
-    execError: function execError(_ref8) {
-        var error = _ref8.error;
-        return "<span class=\"error\">" + error + "</span>";
+    prompt: function prompt(_ref4) {
+        var node = _ref4.node;
+        return "<span class=\"cmdPrompt\">" + node.path + " $</span>";
     }
 };
 
@@ -15371,6 +15354,10 @@ var _terminal = __webpack_require__(336);
 
 var _terminal2 = _interopRequireDefault(_terminal);
 
+var _question = __webpack_require__(352);
+
+var _question2 = _interopRequireDefault(_question);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var terminal = new _terminal2.default({
@@ -15403,7 +15390,7 @@ var terminal = new _terminal2.default({
                 while (1) {
                     switch (_context2.prev = _context2.next) {
                         case 0:
-                            return _context2.abrupt("return", [{ name: "testA", path: path + "/testA" }, { name: "testB", path: path + "/testB" }, { name: "testC", path: path + "/testC" }]);
+                            return _context2.abrupt("return", [{ name: "etc", path: path + "/etc" }, { name: "var", path: path + "/var" }, { name: "usr", path: path + "/usr" }]);
 
                         case 1:
                         case "end":
@@ -15418,6 +15405,8 @@ var terminal = new _terminal2.default({
         };
     }()
 });
+
+terminal.setCommandHandler("question", _question2.default);
 
 terminal.on("activating", function () {
     terminal.log("<strong>*****************************</strong>\n");
@@ -15981,8 +15970,6 @@ var Shell = function (_Base) {
         _this.view = null;
         _this.panel = null;
         _this.initialized = null;
-        _this.overrideOnEnter = null;
-        _this.resumeCallback = null;
         _this.obscure = null;
         _this.executing = [];
         _this.stdout = new _stream2.default(false);
@@ -16066,48 +16053,6 @@ var Shell = function (_Base) {
             this.refresh();
         }
     }, {
-        key: "ask",
-        value: function () {
-            var _ref = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee(prompt, obscure) {
-                var _this4 = this;
-
-                return regeneratorRuntime.wrap(function _callee$(_context) {
-                    while (1) {
-                        switch (_context.prev = _context.next) {
-                            case 0:
-                                return _context.abrupt("return", new Promise(function (resolve) {
-                                    _this4.obscure = obscure;
-                                    _this4.resumeCallback();
-                                    _this4.setPrompt(prompt);
-                                    _this4.history.suspend();
-
-                                    _this4.overrideOnEnter = function (line, resumeCallback) {
-                                        _this4.resumeCallback = function (output /* , cmdtext */) {
-                                            _this4._renderOutput(output);
-                                            resumeCallback();
-                                        };
-
-                                        _this4.obscure = false;
-                                        _this4.history.resume();
-                                        resolve(line);
-                                    };
-                                }));
-
-                            case 1:
-                            case "end":
-                                return _context.stop();
-                        }
-                    }
-                }, _callee, this);
-            }));
-
-            function ask(_x, _x2) {
-                return _ref.apply(this, arguments);
-            }
-
-            return ask;
-        }()
-    }, {
         key: "render",
         value: function render() {
             var text = this.line.text || "";
@@ -16180,31 +16125,31 @@ var Shell = function (_Base) {
     }, {
         key: "_blinkCursor",
         value: function _blinkCursor() {
-            var _this5 = this;
+            var _this4 = this;
 
             if (!this.active || this.blinkTimer) {
                 return;
             }
 
             this.blinkTimer = setTimeout(function () {
-                _this5.blinkTimer = null;
+                _this4.blinkTimer = null;
 
-                if (!_this5.active) {
+                if (!_this4.active) {
                     return;
                 }
 
-                _this5.cursorVisible = !_this5.cursorVisible;
+                _this4.cursorVisible = !_this4.cursorVisible;
 
-                var elCursor = document.querySelector("#" + _this5.inputId + " .input .cursor");
+                var elCursor = document.querySelector("#" + _this4.inputId + " .input .cursor");
 
                 if (elCursor) {
-                    if (_this5.cursorVisible) {
+                    if (_this4.cursorVisible) {
                         elCursor.style.textDecoration = "underline";
                     } else {
                         elCursor.style.textDecoration = "";
                     }
 
-                    _this5._blinkCursor();
+                    _this4._blinkCursor();
                 }
             }, this.blinktime);
         }
@@ -16310,11 +16255,11 @@ var Shell = function (_Base) {
     }, {
         key: "_parseCommandLine",
         value: function () {
-            var _ref2 = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(cmdline) {
+            var _ref = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee(cmdline) {
                 var cmdtexts, cmds, pipe, n, isLast, cmdtext, parts, cmdName, cmdArgs, handler, streams, parsed, help;
-                return regeneratorRuntime.wrap(function _callee2$(_context2) {
+                return regeneratorRuntime.wrap(function _callee$(_context) {
                     while (1) {
-                        switch (_context2.prev = _context2.next) {
+                        switch (_context.prev = _context.next) {
                             case 0:
                                 cmdtexts = cmdline.split("|");
                                 cmds = [];
@@ -16323,27 +16268,27 @@ var Shell = function (_Base) {
 
                             case 4:
                                 if (!(n < cmdtexts.length)) {
-                                    _context2.next = 37;
+                                    _context.next = 37;
                                     break;
                                 }
 
                                 isLast = n === cmdtexts.length - 1;
                                 cmdtext = cmdtexts[n];
                                 parts = [];
-                                _context2.prev = 8;
+                                _context.prev = 8;
 
                                 parts = (0, _argvSplit2.default)(cmdtext);
-                                _context2.next = 17;
+                                _context.next = 17;
                                 break;
 
                             case 12:
-                                _context2.prev = 12;
-                                _context2.t0 = _context2["catch"](8);
-                                _context2.next = 16;
-                                return this.stderr.write("Unable to parse command: " + _context2.t0.message);
+                                _context.prev = 12;
+                                _context.t0 = _context["catch"](8);
+                                _context.next = 16;
+                                return this.stderr.write("Unable to parse command: " + _context.t0.message);
 
                             case 16:
-                                return _context2.abrupt("return", []);
+                                return _context.abrupt("return", []);
 
                             case 17:
                                 cmdName = parts[0];
@@ -16361,25 +16306,26 @@ var Shell = function (_Base) {
                                 }
 
                                 parsed = {};
-                                _context2.prev = 23;
+                                _context.prev = 23;
 
                                 parsed = _util2.default.parseArgs(cmdArgs, handler.args || [], handler.opts || {});
-                                _context2.next = 33;
+                                _context.next = 33;
                                 break;
 
                             case 27:
-                                _context2.prev = 27;
-                                _context2.t1 = _context2["catch"](23);
-                                help = this._renderHelp(cmdName, handler.args || [], handler.opts || {}, handler.desc || "", _context2.t1);
-                                _context2.next = 32;
+                                _context.prev = 27;
+                                _context.t1 = _context["catch"](23);
+                                help = this._renderHelp(cmdName, handler.args || [], handler.opts || {}, handler.desc || "", _context.t1);
+                                _context.next = 32;
                                 return this.stderr.write(help);
 
                             case 32:
-                                return _context2.abrupt("return", []);
+                                return _context.abrupt("return", []);
 
                             case 33:
 
                                 cmds.push({
+                                    cmdtext: cmdtext,
                                     cmdName: cmdName,
                                     streams: streams,
                                     handler: handler,
@@ -16389,22 +16335,22 @@ var Shell = function (_Base) {
 
                             case 34:
                                 n++;
-                                _context2.next = 4;
+                                _context.next = 4;
                                 break;
 
                             case 37:
-                                return _context2.abrupt("return", cmds.reverse());
+                                return _context.abrupt("return", cmds);
 
                             case 38:
                             case "end":
-                                return _context2.stop();
+                                return _context.stop();
                         }
                     }
-                }, _callee2, this, [[8, 12], [23, 27]]);
+                }, _callee, this, [[8, 12], [23, 27]]);
             }));
 
-            function _parseCommandLine(_x5) {
-                return _ref2.apply(this, arguments);
+            function _parseCommandLine(_x3) {
+                return _ref.apply(this, arguments);
             }
 
             return _parseCommandLine;
@@ -16412,331 +16358,335 @@ var Shell = function (_Base) {
     }, {
         key: "_load",
         value: function _load() {
-            var _this6 = this;
+            var _this5 = this;
 
             this.readline.on("eot", function () {
                 for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
                     args[_key] = arguments[_key];
                 }
 
-                _this6._trigger.apply(_this6, ["eot"].concat(args));
+                _this5._trigger.apply(_this5, ["eot"].concat(args));
             });
 
             this.readline.on("activate", function () {
-                if (_this6.initialized) {
-                    _this6.initialized = true;
-                    _this6._trigger("initialize", _this6._activateShell.bind(_this6));
+                if (_this5.initialized) {
+                    _this5.initialized = true;
+                    _this5._trigger("initialize", _this5._activateShell.bind(_this5));
                 }
 
-                return _this6._activateShell();
+                return _this5._activateShell();
             });
 
             this.readline.on("deactivate", function () {
-                _this6._trigger("deactivate");
+                _this5._trigger("deactivate");
             });
 
             this.readline.on("change", function (line) {
-                _this6.line = line;
+                _this5.line = line;
 
-                if (_this6.obscure) {
-                    _this6.line.text = _this6.line.text.replace(/./g, "*");
+                if (_this5.obscure) {
+                    _this5.line.text = _this5.line.text.replace(/./g, "*");
                 }
 
-                _this6.render();
+                _this5.render();
             });
 
             this.readline.on("clear", function () {
-                _this6.clear();
-                _this6._renderOutput();
+                _this5.clear();
+                _this5._renderOutput();
             });
 
             this.readline.on("searchStart", function () {
-                document.getElementById(_this6.inputId).outerHTML = _templates2.default.inputSearch({ id: _this6.inputId });
-                _this6._log("started search");
+                document.getElementById(_this5.inputId).outerHTML = _templates2.default.inputSearch({ id: _this5.inputId });
+                _this5._log("started search");
             });
 
             this.readline.on("searchEnd", function () {
-                document.getElementById(_this6.inputId).outerHTML = _templates2.default.inputSearch({ id: _this6.inputId });
-                _this6.searchMatch = null;
-                _this6.render();
-                _this6._log("ended search");
+                document.getElementById(_this5.inputId).outerHTML = _templates2.default.inputSearch({ id: _this5.inputId });
+                _this5.searchMatch = null;
+                _this5.render();
+                _this5._log("ended search");
             });
 
             this.readline.on("searchChange", function (match) {
-                _this6.searchMatch = match;
-                _this6.render();
+                _this5.searchMatch = match;
+                _this5.render();
             });
 
             this.readline.on("enter", function () {
-                var _ref3 = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee3(cmdtext) {
+                var _ref2 = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(cmdtext) {
                     var promises;
-                    return regeneratorRuntime.wrap(function _callee3$(_context3) {
+                    return regeneratorRuntime.wrap(function _callee2$(_context2) {
                         while (1) {
-                            switch (_context3.prev = _context3.next) {
+                            switch (_context2.prev = _context2.next) {
                                 case 0:
-                                    if (!(_this6.executing.length > 0)) {
-                                        _context3.next = 2;
+                                    if (!(_this5.executing.length > 0)) {
+                                        _context2.next = 3;
                                         break;
                                     }
 
-                                    return _context3.abrupt("return", _this6.stdin.write(cmdtext + " \n"));
+                                    _this5._freezePrompt();
+                                    return _context2.abrupt("return", _this5.stdin.write(cmdtext));
 
-                                case 2:
+                                case 3:
 
-                                    _this6._log("got command: " + cmdtext);
+                                    _this5._log("got command: " + cmdtext);
 
                                     if (cmdtext) {
-                                        _context3.next = 6;
+                                        _context2.next = 7;
                                         break;
                                     }
 
-                                    _this6._renderOutput();
-                                    return _context3.abrupt("return");
+                                    _this5._renderOutput();
+                                    return _context2.abrupt("return");
 
-                                case 6:
+                                case 7:
 
-                                    _this6._stopBlinkCursor();
-                                    _this6._freezePrompt();
-                                    _this6.history.suspend();
+                                    _this5._freezePrompt();
+                                    _this5.history.suspend();
 
-                                    _context3.next = 11;
-                                    return _this6._parseCommandLine(cmdtext);
+                                    _context2.next = 11;
+                                    return _this5._parseCommandLine(cmdtext);
 
                                 case 11:
-                                    _this6.executing = _context3.sent;
+                                    _this5.executing = _context2.sent;
 
-                                    if (!(_this6.executing.length === 0)) {
-                                        _context3.next = 15;
+                                    if (!(_this5.executing.length === 0)) {
+                                        _context2.next = 15;
                                         break;
                                     }
 
-                                    _this6.history.resume();
-                                    return _context3.abrupt("return", _this6._renderPrompt());
+                                    _this5.history.resume();
+                                    return _context2.abrupt("return", _this5._renderPrompt());
 
                                 case 15:
-                                    promises = _this6.executing.map(function (cmd) {
-                                        return cmd.handler.exec(_this6.terminal, cmd.streams, cmd.cmdName, cmd.opts, cmd.args).then(function () {
+
+                                    _this5.executing = _this5.executing.reverse();
+
+                                    promises = _this5.executing.map(function (cmd) {
+                                        return cmd.handler.exec(_this5.terminal, cmd.streams, cmd.cmdName, cmd.opts, cmd.args).then(function () {
                                             cmd.streams.stdout.isPipe() && cmd.streams.stdout.close();
                                             return null;
                                         }).catch(function (error) {
                                             cmd.streams.stdout.isPipe() && cmd.streams.stdout.close();
-                                            return _this6.stderr.write("Command failed: " + error.message + "\n");
+                                            return _this5.stderr.write("Command failed: " + error.message + "\n");
                                         });
                                     });
 
 
                                     Promise.all(promises).then(function () {
-                                        _this6.executing.length = 0;
-                                        _this6.history.resume();
-                                        _this6._renderPrompt();
+                                        _this5.executing.length = 0;
+                                        _this5.history.resume();
+                                        _this5._renderPrompt();
                                     }).catch(function (error) {
-                                        _this6.executing.length = 0;
+                                        _this5.executing.length = 0;
                                         console.error(error);
-                                        _this6.history.resume();
-                                        _this6._renderPrompt();
+                                        _this5.history.resume();
+                                        _this5._renderPrompt();
                                     });
 
-                                case 17:
+                                case 18:
                                 case "end":
-                                    return _context3.stop();
+                                    return _context2.stop();
                             }
                         }
-                    }, _callee3, _this6);
+                    }, _callee2, _this5);
                 }));
 
-                return function (_x6) {
-                    return _ref3.apply(this, arguments);
+                return function (_x4) {
+                    return _ref2.apply(this, arguments);
                 };
             }());
 
-            this.readline.on("cancel", (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee4() {
+            this.readline.on("cancel", (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee3() {
                 var _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, cmd;
 
-                return regeneratorRuntime.wrap(function _callee4$(_context4) {
+                return regeneratorRuntime.wrap(function _callee3$(_context3) {
                     while (1) {
-                        switch (_context4.prev = _context4.next) {
+                        switch (_context3.prev = _context3.next) {
                             case 0:
                                 _iteratorNormalCompletion = true;
                                 _didIteratorError = false;
                                 _iteratorError = undefined;
-                                _context4.prev = 3;
+                                _context3.prev = 3;
 
-                                for (_iterator = _this6.executing[Symbol.iterator](); !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                                for (_iterator = _this5.executing[Symbol.iterator](); !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                                     cmd = _step.value;
 
-                                    cmd.streams.stdin.close();
+                                    cmd.streams.stdin.abort();
                                 }
-                                _context4.next = 11;
+                                _context3.next = 11;
                                 break;
 
                             case 7:
-                                _context4.prev = 7;
-                                _context4.t0 = _context4["catch"](3);
+                                _context3.prev = 7;
+                                _context3.t0 = _context3["catch"](3);
                                 _didIteratorError = true;
-                                _iteratorError = _context4.t0;
+                                _iteratorError = _context3.t0;
 
                             case 11:
-                                _context4.prev = 11;
-                                _context4.prev = 12;
+                                _context3.prev = 11;
+                                _context3.prev = 12;
 
                                 if (!_iteratorNormalCompletion && _iterator.return) {
                                     _iterator.return();
                                 }
 
                             case 14:
-                                _context4.prev = 14;
+                                _context3.prev = 14;
 
                                 if (!_didIteratorError) {
-                                    _context4.next = 17;
+                                    _context3.next = 17;
                                     break;
                                 }
 
                                 throw _iteratorError;
 
                             case 17:
-                                return _context4.finish(14);
+                                return _context3.finish(14);
 
                             case 18:
-                                return _context4.finish(11);
+                                return _context3.finish(11);
 
                             case 19:
                             case "end":
-                                return _context4.stop();
+                                return _context3.stop();
                         }
                     }
-                }, _callee4, _this6, [[3, 7, 11, 19], [12,, 14, 18]]);
+                }, _callee3, _this5, [[3, 7, 11, 19], [12,, 14, 18]]);
             })));
 
             this.readline.on("completion", function () {
-                var _ref5 = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee5(line) {
-                    var text, parts, cmd, arg, handler, argName, before, args, match;
-                    return regeneratorRuntime.wrap(function _callee5$(_context5) {
+                var _ref4 = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee4(line) {
+                    var text, parts, cmdName, handler, argName, args, match;
+                    return regeneratorRuntime.wrap(function _callee4$(_context4) {
                         while (1) {
-                            switch (_context5.prev = _context5.next) {
+                            switch (_context4.prev = _context4.next) {
                                 case 0:
                                     if (line) {
-                                        _context5.next = 2;
+                                        _context4.next = 2;
                                         break;
                                     }
 
-                                    return _context5.abrupt("return");
+                                    return _context4.abrupt("return");
 
                                 case 2:
-                                    text = line.text.substr(0, line.cursor);
+                                    text = line.text.substr(0, line.cursor).split("|").pop().replace(/^\s+/g, "");
                                     parts = void 0;
-                                    _context5.prev = 4;
+                                    _context4.prev = 4;
 
                                     parts = (0, _argvSplit2.default)(text);
-                                    _context5.next = 11;
+                                    _context4.next = 11;
                                     break;
 
                                 case 8:
-                                    _context5.prev = 8;
-                                    _context5.t0 = _context5["catch"](4);
-                                    return _context5.abrupt("return");
+                                    _context4.prev = 8;
+                                    _context4.t0 = _context4["catch"](4);
+                                    return _context4.abrupt("return");
 
                                 case 11:
-                                    cmd = parts.shift() || "";
-                                    arg = parts.pop() || "";
+                                    cmdName = parts.shift() || "";
 
-                                    _this6._log("getting completion handler for " + cmd);
-                                    handler = _this6._getHandler(cmd);
 
-                                    if (!(handler !== _this6.cmdHandlers._default && cmd && cmd === text)) {
-                                        _context5.next = 18;
+                                    _this5._log("getting completion handler for " + cmdName);
+                                    handler = _this5._getHandler(cmdName);
+
+                                    if (!(handler !== _this5.cmdHandlers._default && cmdName && cmdName === text)) {
+                                        _context4.next = 17;
                                         break;
                                     }
 
-                                    _this6._log("valid cmd, no args: append space");
+                                    _this5._log("valid cmd, no args: append space");
                                     // the text to complete is just a valid command, append a space
-                                    return _context5.abrupt("return", " ");
+                                    return _context4.abrupt("return", " ");
 
-                                case 18:
+                                case 17:
                                     if (handler.completion) {
-                                        _context5.next = 20;
+                                        _context4.next = 20;
                                         break;
                                     }
 
-                                    return _context5.abrupt("return");
+                                    _this5._log("no completion method");
+                                    // handler has no completion function, so we can't complete
+                                    return _context4.abrupt("return");
 
                                 case 20:
                                     argName = null;
 
-                                    if (!(handler !== _this6.cmdHandlers._default)) {
-                                        _context5.next = 30;
+                                    if (!(handler !== _this5.cmdHandlers._default)) {
+                                        _context4.next = 29;
                                         break;
                                     }
 
-                                    before = line.text.substr(0, line.cursor);
-                                    args = before.split(" ");
-
-
-                                    args.shift(); // Remove cmd name
-                                    args = args.filter(function (a) {
+                                    args = parts.filter(function (a) {
                                         return a[0] !== "-";
                                     }); // Remove flags
 
-                                    argName = handler.args[args.length - 1];
+                                    _this5._log("args", args);
+
+                                    argName = handler.args[Math.max(0, args.length - 1)];
+
+                                    _this5._log("argName", argName);
 
                                     if (argName) {
-                                        _context5.next = 29;
+                                        _context4.next = 28;
                                         break;
                                     }
 
-                                    return _context5.abrupt("return");
+                                    return _context4.abrupt("return");
 
-                                case 29:
+                                case 28:
 
                                     argName = argName[0] === "?" ? argName.substr(1) : argName;
 
-                                case 30:
+                                case 29:
 
-                                    _this6._log("calling completion handler for " + cmd);
+                                    _this5._log("calling completion handler for " + cmdName);
 
-                                    _context5.prev = 31;
-                                    _context5.next = 34;
-                                    return handler.completion(_this6.terminal, cmd, argName, arg, line);
+                                    _context4.prev = 30;
+                                    _context4.next = 33;
+                                    return handler.completion(_this5.terminal, cmdName, argName, parts.pop(), line);
 
-                                case 34:
-                                    match = _context5.sent;
+                                case 33:
+                                    match = _context4.sent;
 
 
-                                    _this6._log("completion: " + JSON.stringify(match));
+                                    _this5._log("completion: " + JSON.stringify(match));
 
                                     if (match) {
-                                        _context5.next = 38;
+                                        _context4.next = 37;
                                         break;
                                     }
 
-                                    return _context5.abrupt("return");
+                                    return _context4.abrupt("return");
 
-                                case 38:
+                                case 37:
 
                                     if (match.suggestions && match.suggestions.length > 1) {
-                                        _this6._renderOutput(_templates2.default.suggest({ suggestions: match.suggestions }));
+                                        _this5._renderOutput(_templates2.default.suggest({ suggestions: match.suggestions }));
                                     }
 
-                                    return _context5.abrupt("return", match.completion);
+                                    return _context4.abrupt("return", match.completion);
 
-                                case 42:
-                                    _context5.prev = 42;
-                                    _context5.t1 = _context5["catch"](31);
+                                case 41:
+                                    _context4.prev = 41;
+                                    _context4.t1 = _context4["catch"](30);
 
-                                    _this6._log(_context5.t1);
+                                    _this5._log(_context4.t1);
+
+                                case 44:
+                                    return _context4.abrupt("return", []);
 
                                 case 45:
-                                    return _context5.abrupt("return", []);
-
-                                case 46:
                                 case "end":
-                                    return _context5.stop();
+                                    return _context4.stop();
                             }
                         }
-                    }, _callee5, _this6, [[4, 8], [31, 42]]);
+                    }, _callee4, _this5, [[4, 8], [30, 41]]);
                 }));
 
-                return function (_x7) {
-                    return _ref5.apply(this, arguments);
+                return function (_x5) {
+                    return _ref4.apply(this, arguments);
                 };
             }());
         }
@@ -17812,8 +17762,9 @@ var Stream = function (_Base) {
         var _this2 = _possibleConstructorReturn(this, (Stream.__proto__ || Object.getPrototypeOf(Stream)).call(this));
 
         _this2.pipe = pipe;
-        _this2.closeDeferred = new Deferred();
         _this2.readDeferred = new Deferred();
+        _this2.buffer = [];
+        _this2.aborted = false;
 
         _this2.on("data", function () {
             var _ref = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee(data) {
@@ -17822,12 +17773,14 @@ var Stream = function (_Base) {
                     while (1) {
                         switch (_context.prev = _context.next) {
                             case 0:
+                                _this2.buffer.push(data);
+
                                 deferred = _this2.readDeferred;
 
                                 _this2.readDeferred = new Deferred();
-                                deferred.resolve(data);
+                                deferred.resolve();
 
-                            case 3:
+                            case 4:
                             case "end":
                                 return _context.stop();
                         }
@@ -17844,29 +17797,37 @@ var Stream = function (_Base) {
 
     _createClass(Stream, [{
         key: "read",
-        value: function read() {
-            return this.readDeferred.promise;
-        }
-    }, {
-        key: "write",
         value: function () {
-            var _ref2 = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee2(data) {
+            var _ref2 = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee2() {
                 return regeneratorRuntime.wrap(function _callee2$(_context2) {
                     while (1) {
                         switch (_context2.prev = _context2.next) {
                             case 0:
-                                if (!(typeof data !== "string")) {
-                                    _context2.next = 2;
+                                if (!this.aborted) {
+                                    _context2.next = 4;
                                     break;
                                 }
 
-                                throw new Error("data must be of type string");
-
-                            case 2:
-                                _context2.next = 4;
-                                return this._trigger("data", data);
+                                this.aborted = false;
+                                this.buffer.length = 0;
+                                throw new Error("Command aborted");
 
                             case 4:
+                                if (!(this.buffer.length > 0)) {
+                                    _context2.next = 6;
+                                    break;
+                                }
+
+                                return _context2.abrupt("return", this.buffer.shift());
+
+                            case 6:
+                                _context2.next = 8;
+                                return this.readDeferred.promise;
+
+                            case 8:
+                                return _context2.abrupt("return", this.read());
+
+                            case 9:
                             case "end":
                                 return _context2.stop();
                         }
@@ -17874,24 +17835,30 @@ var Stream = function (_Base) {
                 }, _callee2, this);
             }));
 
-            function write(_x3) {
+            function read() {
                 return _ref2.apply(this, arguments);
             }
 
-            return write;
+            return read;
         }()
     }, {
-        key: "close",
+        key: "write",
         value: function () {
-            var _ref3 = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee3() {
+            var _ref3 = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee3(data) {
                 return regeneratorRuntime.wrap(function _callee3$(_context3) {
                     while (1) {
                         switch (_context3.prev = _context3.next) {
                             case 0:
-                                this.closeDeferred.resolve();
-                                this.closeDeferred = new Deferred();
+                                if (!(typeof data !== "string")) {
+                                    _context3.next = 2;
+                                    break;
+                                }
+
+                                throw new Error("data must be of type string");
+
+                            case 2:
                                 _context3.next = 4;
-                                return this._trigger("data", false);
+                                return this._trigger("data", data);
 
                             case 4:
                             case "end":
@@ -17901,14 +17868,14 @@ var Stream = function (_Base) {
                 }, _callee3, this);
             }));
 
-            function close() {
+            function write(_x3) {
                 return _ref3.apply(this, arguments);
             }
 
-            return close;
+            return write;
         }()
     }, {
-        key: "awaitClose",
+        key: "close",
         value: function () {
             var _ref4 = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee4() {
                 return regeneratorRuntime.wrap(function _callee4$(_context4) {
@@ -17916,7 +17883,7 @@ var Stream = function (_Base) {
                         switch (_context4.prev = _context4.next) {
                             case 0:
                                 _context4.next = 2;
-                                return this.closeDeferred.promise;
+                                return this._trigger("data", false);
 
                             case 2:
                             case "end":
@@ -17926,11 +17893,37 @@ var Stream = function (_Base) {
                 }, _callee4, this);
             }));
 
-            function awaitClose() {
+            function close() {
                 return _ref4.apply(this, arguments);
             }
 
-            return awaitClose;
+            return close;
+        }()
+    }, {
+        key: "abort",
+        value: function () {
+            var _ref5 = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee5() {
+                return regeneratorRuntime.wrap(function _callee5$(_context5) {
+                    while (1) {
+                        switch (_context5.prev = _context5.next) {
+                            case 0:
+                                this.aborted = true;
+                                _context5.next = 3;
+                                return this._trigger("data", false);
+
+                            case 3:
+                            case "end":
+                                return _context5.stop();
+                        }
+                    }
+                }, _callee5, this);
+            }));
+
+            function abort() {
+                return _ref5.apply(this, arguments);
+            }
+
+            return abort;
         }()
     }, {
         key: "isPipe",
@@ -18380,36 +18373,33 @@ exports.default = {
                 while (1) {
                     switch (_context.prev = _context.next) {
                         case 0:
-                            _context.next = 2;
+                            data = void 0;
+
+                        case 1:
+                            _context.next = 3;
                             return streams.stdin.read();
 
-                        case 2:
-                            data = _context.sent;
-
                         case 3:
-                            if (!(data !== false)) {
-                                _context.next = 12;
+                            _context.t0 = data = _context.sent;
+
+                            if (!(_context.t0 !== false)) {
+                                _context.next = 10;
                                 break;
                             }
 
                             if (!data.includes(args.match)) {
-                                _context.next = 7;
+                                _context.next = 8;
                                 break;
                             }
 
-                            _context.next = 7;
+                            _context.next = 8;
                             return streams.stdout.write(data);
 
-                        case 7:
-                            _context.next = 9;
-                            return streams.stdin.read();
-
-                        case 9:
-                            data = _context.sent;
-                            _context.next = 3;
+                        case 8:
+                            _context.next = 1;
                             break;
 
-                        case 12:
+                        case 10:
                         case "end":
                             return _context.stop();
                     }
@@ -19038,6 +19028,64 @@ exports.default = {
                             return streams.stdout.write(term.current() + "\n");
 
                         case 2:
+                        case "end":
+                            return _context.stop();
+                    }
+                }
+            }, _callee, undefined);
+        }));
+
+        return function exec(_x, _x2) {
+            return _ref.apply(this, arguments);
+        };
+    }()
+};
+
+/***/ }),
+/* 352 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _bluebird = __webpack_require__(11);
+
+exports.default = {
+    desc: "Example for asking questions",
+    exec: function () {
+        var _ref = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee(term, streams /* , cmd, opts, args */) {
+            var name, password;
+            return regeneratorRuntime.wrap(function _callee$(_context) {
+                while (1) {
+                    switch (_context.prev = _context.next) {
+                        case 0:
+                            _context.next = 2;
+                            return streams.stdout.write("Just answer anything, this is just an example");
+
+                        case 2:
+
+                            term.setPrompt({ prompt: "Name:" });
+                            _context.next = 5;
+                            return streams.stdin.read();
+
+                        case 5:
+                            name = _context.sent;
+
+
+                            term.setPrompt({ prompt: "Password:", obscure: true });
+                            _context.next = 9;
+                            return streams.stdin.read();
+
+                        case 9:
+                            password = _context.sent;
+                            _context.next = 12;
+                            return streams.stdout.write("Your name is " + name + " and password is " + password);
+
+                        case 12:
                         case "end":
                             return _context.stop();
                     }
