@@ -231,16 +231,6 @@ module.exports = function (it) {
 
 /***/ }),
 /* 10 */
-/***/ (function(module, exports) {
-
-module.exports = function (it) {
-  if (typeof it != 'function') throw TypeError(it + ' is not a function!');
-  return it;
-};
-
-
-/***/ }),
-/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(process, global, setImmediate) {/* @preserve
@@ -5865,6 +5855,16 @@ module.exports = ret;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(128), __webpack_require__(51), __webpack_require__(334).setImmediate))
 
 /***/ }),
+/* 11 */
+/***/ (function(module, exports) {
+
+module.exports = function (it) {
+  if (typeof it != 'function') throw TypeError(it + ' is not a function!');
+  return it;
+};
+
+
+/***/ }),
 /* 12 */
 /***/ (function(module, exports) {
 
@@ -6008,7 +6008,7 @@ module.exports = Object.getPrototypeOf || function (O) {
 /***/ (function(module, exports, __webpack_require__) {
 
 // optional / simple context binding
-var aFunction = __webpack_require__(10);
+var aFunction = __webpack_require__(11);
 module.exports = function (fn, that, length) {
   aFunction(fn);
   if (that === undefined) return fn;
@@ -7056,7 +7056,7 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _bluebird = __webpack_require__(11);
+var _bluebird = __webpack_require__(10);
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -7358,7 +7358,7 @@ module.exports = function (KEY, length, exec) {
 
 // 7.3.20 SpeciesConstructor(O, defaultConstructor)
 var anObject = __webpack_require__(1);
-var aFunction = __webpack_require__(10);
+var aFunction = __webpack_require__(11);
 var SPECIES = __webpack_require__(5)('species');
 module.exports = function (O, D) {
   var C = anObject(O).constructor;
@@ -7536,7 +7536,7 @@ module.exports = function (COLLECTION) {
 
 // https://tc39.github.io/proposal-setmap-offrom/
 var $export = __webpack_require__(0);
-var aFunction = __webpack_require__(10);
+var aFunction = __webpack_require__(11);
 var ctx = __webpack_require__(19);
 var forOf = __webpack_require__(41);
 
@@ -8161,7 +8161,7 @@ module.exports = function () {
 "use strict";
 
 // 25.4.1.5 NewPromiseCapability(C)
-var aFunction = __webpack_require__(10);
+var aFunction = __webpack_require__(11);
 
 function PromiseCapability(C) {
   var resolve, reject;
@@ -8792,7 +8792,7 @@ module.exports = !$assign || __webpack_require__(3)(function () {
 
 "use strict";
 
-var aFunction = __webpack_require__(10);
+var aFunction = __webpack_require__(11);
 var isObject = __webpack_require__(4);
 var invoke = __webpack_require__(101);
 var arraySlice = [].slice;
@@ -8953,7 +8953,7 @@ module.exports = function (iterator, fn, value, entries) {
 /* 109 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var aFunction = __webpack_require__(10);
+var aFunction = __webpack_require__(11);
 var toObject = __webpack_require__(9);
 var IObject = __webpack_require__(48);
 var toLength = __webpack_require__(8);
@@ -12070,7 +12070,7 @@ $export($export.P + $export.F * __webpack_require__(3)(function () {
 "use strict";
 
 var $export = __webpack_require__(0);
-var aFunction = __webpack_require__(10);
+var aFunction = __webpack_require__(11);
 var toObject = __webpack_require__(9);
 var fails = __webpack_require__(3);
 var $sort = [].sort;
@@ -12579,7 +12579,7 @@ var ctx = __webpack_require__(19);
 var classof = __webpack_require__(50);
 var $export = __webpack_require__(0);
 var isObject = __webpack_require__(4);
-var aFunction = __webpack_require__(10);
+var aFunction = __webpack_require__(11);
 var anInstance = __webpack_require__(40);
 var forOf = __webpack_require__(41);
 var speciesConstructor = __webpack_require__(60);
@@ -13043,7 +13043,7 @@ __webpack_require__(28)('Float64', 8, function (init) {
 
 // 26.1.1 Reflect.apply(target, thisArgument, argumentsList)
 var $export = __webpack_require__(0);
-var aFunction = __webpack_require__(10);
+var aFunction = __webpack_require__(11);
 var anObject = __webpack_require__(1);
 var rApply = (__webpack_require__(2).Reflect || {}).apply;
 var fApply = Function.apply;
@@ -13066,7 +13066,7 @@ $export($export.S + $export.F * !__webpack_require__(3)(function () {
 // 26.1.2 Reflect.construct(target, argumentsList [, newTarget])
 var $export = __webpack_require__(0);
 var create = __webpack_require__(37);
-var aFunction = __webpack_require__(10);
+var aFunction = __webpack_require__(11);
 var anObject = __webpack_require__(1);
 var isObject = __webpack_require__(4);
 var fails = __webpack_require__(3);
@@ -13401,7 +13401,7 @@ var $export = __webpack_require__(0);
 var flattenIntoArray = __webpack_require__(122);
 var toObject = __webpack_require__(9);
 var toLength = __webpack_require__(8);
-var aFunction = __webpack_require__(10);
+var aFunction = __webpack_require__(11);
 var arraySpeciesCreate = __webpack_require__(85);
 
 $export($export.P, 'Array', {
@@ -13643,7 +13643,7 @@ $export($export.S, 'Object', {
 
 var $export = __webpack_require__(0);
 var toObject = __webpack_require__(9);
-var aFunction = __webpack_require__(10);
+var aFunction = __webpack_require__(11);
 var $defineProperty = __webpack_require__(7);
 
 // B.2.2.2 Object.prototype.__defineGetter__(P, getter)
@@ -13662,7 +13662,7 @@ __webpack_require__(6) && $export($export.P + __webpack_require__(63), 'Object',
 
 var $export = __webpack_require__(0);
 var toObject = __webpack_require__(9);
-var aFunction = __webpack_require__(10);
+var aFunction = __webpack_require__(11);
 var $defineProperty = __webpack_require__(7);
 
 // B.2.2.3 Object.prototype.__defineSetter__(P, setter)
@@ -14224,7 +14224,7 @@ metadata.exp({ hasOwnMetadata: function hasOwnMetadata(metadataKey, target /* , 
 
 var $metadata = __webpack_require__(29);
 var anObject = __webpack_require__(1);
-var aFunction = __webpack_require__(10);
+var aFunction = __webpack_require__(11);
 var toMetaKey = $metadata.key;
 var ordinaryDefineOwnMetadata = $metadata.set;
 
@@ -14269,7 +14269,7 @@ var global = __webpack_require__(2);
 var core = __webpack_require__(22);
 var microtask = __webpack_require__(89)();
 var OBSERVABLE = __webpack_require__(5)('observable');
-var aFunction = __webpack_require__(10);
+var aFunction = __webpack_require__(11);
 var anObject = __webpack_require__(1);
 var anInstance = __webpack_require__(40);
 var redefineAll = __webpack_require__(42);
@@ -15348,13 +15348,13 @@ module.exports = function (regExp, replace) {
 "use strict";
 
 
-var _bluebird = __webpack_require__(11);
+var _bluebird = __webpack_require__(10);
 
 var _terminal = __webpack_require__(336);
 
 var _terminal2 = _interopRequireDefault(_terminal);
 
-var _question = __webpack_require__(352);
+var _question = __webpack_require__(355);
 
 var _question2 = _interopRequireDefault(_question);
 
@@ -15684,7 +15684,7 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _bluebird = __webpack_require__(11);
+var _bluebird = __webpack_require__(10);
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -15692,7 +15692,7 @@ var _shell2 = __webpack_require__(337);
 
 var _shell3 = _interopRequireDefault(_shell2);
 
-var _pathhandler = __webpack_require__(348);
+var _pathhandler = __webpack_require__(351);
 
 var _pathhandler2 = _interopRequireDefault(_pathhandler);
 
@@ -15882,7 +15882,7 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _bluebird = __webpack_require__(11);
+var _bluebird = __webpack_require__(10);
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -15930,7 +15930,19 @@ var _grep = __webpack_require__(346);
 
 var _grep2 = _interopRequireDefault(_grep);
 
-var _default = __webpack_require__(347);
+var _echo = __webpack_require__(347);
+
+var _echo2 = _interopRequireDefault(_echo);
+
+var _tail = __webpack_require__(348);
+
+var _tail2 = _interopRequireDefault(_tail);
+
+var _head = __webpack_require__(349);
+
+var _head2 = _interopRequireDefault(_head);
+
+var _default = __webpack_require__(350);
 
 var _default2 = _interopRequireDefault(_default);
 
@@ -15983,6 +15995,9 @@ var Shell = function (_Base) {
         _this.setCommandHandler("help", _help2.default);
         _this.setCommandHandler("history", _history4.default);
         _this.setCommandHandler("grep", _grep2.default);
+        _this.setCommandHandler("echo", _echo2.default);
+        _this.setCommandHandler("tail", _tail2.default);
+        _this.setCommandHandler("head", _head2.default);
         _this.setCommandHandler("_default", _default2.default);
 
         _this._load();
@@ -17722,7 +17737,7 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _bluebird = __webpack_require__(11);
+var _bluebird = __webpack_require__(10);
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -18169,7 +18184,7 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _bluebird = __webpack_require__(11);
+var _bluebird = __webpack_require__(10);
 
 exports.default = {
     desc: "Clear output",
@@ -18206,7 +18221,7 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _bluebird = __webpack_require__(11);
+var _bluebird = __webpack_require__(10);
 
 exports.default = {
     desc: "Print help",
@@ -18299,7 +18314,7 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _bluebird = __webpack_require__(11);
+var _bluebird = __webpack_require__(10);
 
 exports.default = {
     desc: "Show history",
@@ -18361,7 +18376,7 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _bluebird = __webpack_require__(11);
+var _bluebird = __webpack_require__(10);
 
 exports.default = {
     desc: "Grep lines",
@@ -18424,7 +18439,236 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _bluebird = __webpack_require__(11);
+var _bluebird = __webpack_require__(10);
+
+exports.default = {
+    desc: "Echo string",
+    args: ["string"],
+    exec: function () {
+        var _ref = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee(term, streams, cmd, opts, args) {
+            return regeneratorRuntime.wrap(function _callee$(_context) {
+                while (1) {
+                    switch (_context.prev = _context.next) {
+                        case 0:
+                            _context.next = 2;
+                            return streams.stdout.write(args.string);
+
+                        case 2:
+                            return _context.abrupt("return", _context.sent);
+
+                        case 3:
+                        case "end":
+                            return _context.stop();
+                    }
+                }
+            }, _callee, undefined);
+        }));
+
+        return function exec(_x, _x2, _x3, _x4, _x5) {
+            return _ref.apply(this, arguments);
+        };
+    }()
+};
+
+/***/ }),
+/* 348 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _bluebird = __webpack_require__(10);
+
+exports.default = {
+    desc: "Show last lines",
+    args: ["?count"],
+    exec: function () {
+        var _ref = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee(term, streams, cmd, opts, args) {
+            var data, count, buffer, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, _data;
+
+            return regeneratorRuntime.wrap(function _callee$(_context) {
+                while (1) {
+                    switch (_context.prev = _context.next) {
+                        case 0:
+                            data = void 0;
+                            count = args.count || 10;
+                            buffer = [];
+
+                        case 3:
+                            _context.next = 5;
+                            return streams.stdin.read();
+
+                        case 5:
+                            _context.t0 = data = _context.sent;
+
+                            if (!(_context.t0 !== false)) {
+                                _context.next = 11;
+                                break;
+                            }
+
+                            buffer.push(data);
+
+                            if (buffer.length > count) {
+                                buffer.shift();
+                            }
+                            _context.next = 3;
+                            break;
+
+                        case 11:
+                            _iteratorNormalCompletion = true;
+                            _didIteratorError = false;
+                            _iteratorError = undefined;
+                            _context.prev = 14;
+                            _iterator = buffer[Symbol.iterator]();
+
+                        case 16:
+                            if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
+                                _context.next = 23;
+                                break;
+                            }
+
+                            _data = _step.value;
+                            _context.next = 20;
+                            return streams.stdout.write(_data);
+
+                        case 20:
+                            _iteratorNormalCompletion = true;
+                            _context.next = 16;
+                            break;
+
+                        case 23:
+                            _context.next = 29;
+                            break;
+
+                        case 25:
+                            _context.prev = 25;
+                            _context.t1 = _context["catch"](14);
+                            _didIteratorError = true;
+                            _iteratorError = _context.t1;
+
+                        case 29:
+                            _context.prev = 29;
+                            _context.prev = 30;
+
+                            if (!_iteratorNormalCompletion && _iterator.return) {
+                                _iterator.return();
+                            }
+
+                        case 32:
+                            _context.prev = 32;
+
+                            if (!_didIteratorError) {
+                                _context.next = 35;
+                                break;
+                            }
+
+                            throw _iteratorError;
+
+                        case 35:
+                            return _context.finish(32);
+
+                        case 36:
+                            return _context.finish(29);
+
+                        case 37:
+                        case "end":
+                            return _context.stop();
+                    }
+                }
+            }, _callee, undefined, [[14, 25, 29, 37], [30,, 32, 36]]);
+        }));
+
+        return function exec(_x, _x2, _x3, _x4, _x5) {
+            return _ref.apply(this, arguments);
+        };
+    }()
+};
+
+/***/ }),
+/* 349 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _bluebird = __webpack_require__(10);
+
+exports.default = {
+    desc: "Show first lines",
+    args: ["?count"],
+    exec: function () {
+        var _ref = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee(term, streams, cmd, opts, args) {
+            var data, count;
+            return regeneratorRuntime.wrap(function _callee$(_context) {
+                while (1) {
+                    switch (_context.prev = _context.next) {
+                        case 0:
+                            data = void 0;
+                            count = args.count || 10;
+
+                        case 2:
+                            _context.next = 4;
+                            return streams.stdin.read();
+
+                        case 4:
+                            _context.t1 = data = _context.sent;
+                            _context.t0 = _context.t1 !== false;
+
+                            if (!_context.t0) {
+                                _context.next = 8;
+                                break;
+                            }
+
+                            _context.t0 = count > 0;
+
+                        case 8:
+                            if (!_context.t0) {
+                                _context.next = 14;
+                                break;
+                            }
+
+                            _context.next = 11;
+                            return streams.stdout.write(data);
+
+                        case 11:
+                            count--;
+                            _context.next = 2;
+                            break;
+
+                        case 14:
+                        case "end":
+                            return _context.stop();
+                    }
+                }
+            }, _callee, undefined);
+        }));
+
+        return function exec(_x, _x2, _x3, _x4, _x5) {
+            return _ref.apply(this, arguments);
+        };
+    }()
+};
+
+/***/ }),
+/* 350 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _bluebird = __webpack_require__(10);
 
 exports.default = {
     exec: function () {
@@ -18475,7 +18719,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 348 */
+/* 351 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -18485,7 +18729,7 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _bluebird = __webpack_require__(11);
+var _bluebird = __webpack_require__(10);
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -18501,15 +18745,15 @@ var _util = __webpack_require__(93);
 
 var _util2 = _interopRequireDefault(_util);
 
-var _cd = __webpack_require__(349);
+var _cd = __webpack_require__(352);
 
 var _cd2 = _interopRequireDefault(_cd);
 
-var _ls = __webpack_require__(350);
+var _ls = __webpack_require__(353);
 
 var _ls2 = _interopRequireDefault(_ls);
 
-var _pwd = __webpack_require__(351);
+var _pwd = __webpack_require__(354);
 
 var _pwd2 = _interopRequireDefault(_pwd);
 
@@ -18751,7 +18995,7 @@ var PathHandler = function (_Base) {
 exports.default = PathHandler;
 
 /***/ }),
-/* 349 */
+/* 352 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -18761,7 +19005,7 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _bluebird = __webpack_require__(11);
+var _bluebird = __webpack_require__(10);
 
 exports.default = {
     desc: "Change location",
@@ -18842,7 +19086,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 350 */
+/* 353 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -18852,14 +19096,17 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _bluebird = __webpack_require__(11);
+var _bluebird = __webpack_require__(10);
 
 exports.default = {
     desc: "List items",
     args: ["?path"],
+    opts: {
+        1: "Show as list"
+    },
     exec: function () {
         var _ref = (0, _bluebird.coroutine)( /*#__PURE__*/regeneratorRuntime.mark(function _callee(term, streams, cmd, opts, args) {
-            var node, error, children, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, child;
+            var node, separator, error, children, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, child;
 
             return regeneratorRuntime.wrap(function _callee$(_context) {
                 while (1) {
@@ -18883,86 +19130,87 @@ exports.default = {
 
                         case 7:
                             node = _context.t0;
+                            separator = !streams.stdout.isPipe() && !opts[1] ? " " : "\n";
 
                             if (node) {
-                                _context.next = 13;
+                                _context.next = 14;
                                 break;
                             }
 
                             error = "ls: " + args.path + ": No such file or directory\n";
-                            _context.next = 12;
+                            _context.next = 13;
                             return streams.stderr.write(error);
 
-                        case 12:
+                        case 13:
                             return _context.abrupt("return", _context.sent);
 
-                        case 13:
-                            _context.next = 15;
+                        case 14:
+                            _context.next = 16;
                             return term.pathhandler.getChildNodes(node);
 
-                        case 15:
+                        case 16:
                             children = _context.sent;
                             _iteratorNormalCompletion = true;
                             _didIteratorError = false;
                             _iteratorError = undefined;
-                            _context.prev = 19;
+                            _context.prev = 20;
                             _iterator = children[Symbol.iterator]();
 
-                        case 21:
+                        case 22:
                             if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
-                                _context.next = 28;
+                                _context.next = 29;
                                 break;
                             }
 
                             child = _step.value;
-                            _context.next = 25;
-                            return streams.stdout.write(child.name + "\n");
+                            _context.next = 26;
+                            return streams.stdout.write("" + child.name + separator);
 
-                        case 25:
+                        case 26:
                             _iteratorNormalCompletion = true;
-                            _context.next = 21;
+                            _context.next = 22;
                             break;
 
-                        case 28:
-                            _context.next = 34;
+                        case 29:
+                            _context.next = 35;
                             break;
 
-                        case 30:
-                            _context.prev = 30;
-                            _context.t1 = _context["catch"](19);
+                        case 31:
+                            _context.prev = 31;
+                            _context.t1 = _context["catch"](20);
                             _didIteratorError = true;
                             _iteratorError = _context.t1;
 
-                        case 34:
-                            _context.prev = 34;
+                        case 35:
                             _context.prev = 35;
+                            _context.prev = 36;
 
                             if (!_iteratorNormalCompletion && _iterator.return) {
                                 _iterator.return();
                             }
 
-                        case 37:
-                            _context.prev = 37;
+                        case 38:
+                            _context.prev = 38;
 
                             if (!_didIteratorError) {
-                                _context.next = 40;
+                                _context.next = 41;
                                 break;
                             }
 
                             throw _iteratorError;
 
-                        case 40:
-                            return _context.finish(37);
-
                         case 41:
-                            return _context.finish(34);
+                            return _context.finish(38);
 
                         case 42:
+                            return _context.finish(35);
+
+                        case 43:
                         case "end":
                             return _context.stop();
                     }
                 }
-            }, _callee, undefined, [[19, 30, 34, 42], [35,, 37, 41]]);
+            }, _callee, undefined, [[20, 31, 35, 43], [36,, 38, 42]]);
         }));
 
         return function exec(_x, _x2, _x3, _x4, _x5) {
@@ -19004,7 +19252,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 351 */
+/* 354 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -19014,7 +19262,7 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _bluebird = __webpack_require__(11);
+var _bluebird = __webpack_require__(10);
 
 exports.default = {
     desc: "Print current location",
@@ -19042,7 +19290,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 352 */
+/* 355 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -19052,7 +19300,7 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _bluebird = __webpack_require__(11);
+var _bluebird = __webpack_require__(10);
 
 exports.default = {
     desc: "Example for asking questions",
