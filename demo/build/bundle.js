@@ -16963,8 +16963,8 @@ var ReadLine = function (_Base) {
             return {
                 code: code,
                 character: c,
-                shift: e.shiftKey,
-                ctrl: e.controlKey || e.ctrlKey,
+                shift: e.shiftKey && !e.ctrlKey,
+                ctrl: e.ctrlKey && !e.shiftKey,
                 alt: e.altKey,
                 meta: e.metaKey,
                 isChar: true
