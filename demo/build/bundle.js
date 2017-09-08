@@ -16963,9 +16963,9 @@ var ReadLine = function (_Base) {
             return {
                 code: code,
                 character: c,
-                shift: e.shiftKey && !e.ctrlKey,
-                ctrl: e.ctrlKey && !e.shiftKey,
-                alt: e.altKey,
+                shift: e.shiftKey,
+                ctrl: e.ctrlKey && !e.altKey,
+                alt: e.altKey && !e.ctrlKey,
                 meta: e.metaKey,
                 isChar: true
             };
